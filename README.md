@@ -1,4 +1,28 @@
-# kinesis_viewer_cli
+# kinesis_data_viewer_cli(仮)
+
+Kinesis Data Streams(KDS)のDataStreamに格納されたレコード情報を取得するためのCLIツール
+
+## 利用イメージ
+
+## 既存のレコード取得方法とその問題点
+
+### Kinesis Data Viewer(マネコン)
+
+- シャードを選択し、timestampやsequenceNumberを指定してレコードを取得
+- trimHorizenで全てのレコードを取得できるはずだが、実際には取得が難しい
+- 全体でどのくらいのレコードが保存されているかなどのメタ情報がわからない
+- レコードの内容(data部)で検索できない
+
+### KDS CLI
+
+- 全てのレコードの取得が可能であるが
+- list-shard, get-sharditelatorなどの複数コマンドを組み合わせないと、レコードが取得できないため不便
+- レコードの内容(data部)で検索できない
+
+### Apache Flink
+
+- レコードの内容で検索できる唯一の手法だが、サービスの利用料金が高い
+
 
 ```bash
 # 利用可能なバージョン確認
@@ -34,6 +58,6 @@ kdv summary [データストリーム名]
 
 # シャードごとに保存されているレコード情報を一覧表示
 # シャードIDは選択性
-kdv list [データストリーム名]
+kdv list_records [データストリーム名]
 
 ```

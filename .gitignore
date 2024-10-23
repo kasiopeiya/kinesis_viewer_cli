@@ -1,3 +1,4 @@
+*.csv
 *.ipynb
 .pytype
 .DS_Store
