@@ -153,17 +153,17 @@ class KinesisDataViewer:
         """処理対象DataStreamに格納されている全てのレコードを取得する
 
         Return Example:
-          {                                                                                                                                                                                                                                         │ │
-            'shardId-000000000000': {                                                                                                                                                                                                          │ │
-              '49657051368801430459340561020608066337892395447780114434': {                                                                                                                                                                     │ │
-                'Data': '{"recordId":"RCS3ffmbiL","requestId":"1-3-diHOsUpMZsWnB5Bp",'+165,                                                                                                                                                   │ │
-                'PartitionKey': 'RCS3ffmbiL',                                                                                                                                                                                                 │ │
-                'ApproximateArrivalTimestamp': '2024-10-24 14:23:43 JST'                                                                                                                                                                      │ │
-              },                                                                                                                                                                                                                                │ │
-              '49657051368801430459340561020609275263712010076954820610': {                                                                                                                                                                     │ │
-                'Data': '{"recordId":"4l7RHBOOWj","requestId":"1-3-diHOsUpMZsWnB5Bp",'+165,                                                                                                                                                   │ │
-                'PartitionKey': '4l7RHBOOWj',                                                                                                                                                                                                 │ │
-                'ApproximateArrivalTimestamp': '2024-10-24 14:23:43 JST'                                                                                                                                                                      │ │
+          {
+            'shardId-000000000000': {
+              '49657051368801430459340561020608066337892395447780114434': {
+                'Data': '{"recordId":"RCS3ffmbiL","requestId":"1-3-diHOsUpMZsWnB5Bp",'
+                'PartitionKey': 'RCS3ffmbiL'
+                'ApproximateArrivalTimestamp': '2024-10-24 14:23:43 JST'
+              }
+              '49657051368801430459340561020609275263712010076954820610': {
+                'Data': '{"recordId":"4l7RHBOOWj","requestId":"1-3-diHOsUpMZsWnB5Bp",'
+                'PartitionKey': '4l7RHBOOWj'
+                'ApproximateArrivalTimestamp': '2024-10-24 14:23:43 JST'
           │   },
             'shardId-000000000001': {
             ...
@@ -186,16 +186,16 @@ class KinesisDataViewer:
 
         Return Example:
           {
-            '49657051368801430459340561020608066337892395447780114434': {                                                                                                                                                                     │ │
-              'Data': '{"recordId":"RCS3ffmbiL","requestId":"1-3-diHOsUpMZsWnB5Bp",'+165,                                                                                                                                                   │ │
-              'PartitionKey': 'RCS3ffmbiL',                                                                                                                                                                                                 │ │
-              'ApproximateArrivalTimestamp': '2024-10-24 14:23:43 JST'                                                                                                                                                                      │ │
-            },                                                                                                                                                                                                                                │ │
-            '49657051368801430459340561020609275263712010076954820610': {                                                                                                                                                                     │ │
-              'Data': '{"recordId":"4l7RHBOOWj","requestId":"1-3-diHOsUpMZsWnB5Bp",'+165,                                                                                                                                                   │ │
-              'PartitionKey': '4l7RHBOOWj',                                                                                                                                                                                                 │ │
-              'ApproximateArrivalTimestamp': '2024-10-24 14:23:43 JST'                                                                                                                                                                      │ │
-        │   },
+            '49657051368801430459340561020608066337892395447780114434':
+              'Data': '{"recordId":"RCS3ffmbiL","requestId":"1-3-diHOsUpMZsWnB5Bp",'
+              'PartitionKey': 'RCS3ffmbiL'
+              'ApproximateArrivalTimestamp': '2024-10-24 14:23:43 JST'
+            }
+            '49657051368801430459340561020609275263712010076954820610': {
+              'Data': '{"recordId":"4l7RHBOOWj","requestId":"1-3-diHOsUpMZsWnB5Bp",'
+              'PartitionKey': '4l7RHBOOWj'
+              'ApproximateArrivalTimestamp': '2024-10-24 14:23:43 JST'
+            },
           }
         """
         response = self.kinesis_client.get_shard_iterator(
