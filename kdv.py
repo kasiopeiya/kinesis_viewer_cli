@@ -17,6 +17,7 @@ TIMESTAMP = "ApproximateArrivalTimestamp"
 SHARD_ID = "ShardId"
 NUM_OF_RECORDS = "NumOfRecords"
 LAST_ADDED_TIME = "LastAddedTime"
+NUMBER = "No"
 
 
 class KinesisDataViewer:
@@ -47,7 +48,13 @@ class KinesisDataViewer:
     def main(self) -> None:
         # 操作コマンドの選択
         rich.print("select 'exit' for data refresh")
-        commands = ("summary", "dump_records", "search_record", "exit")
+        commands = (
+            "summary",
+            "dump_records",
+            "show_recent_records",
+            "search_record",
+            "exit",
+        )
         command = questionary.select("Command?", choices=commands).ask()
         if command == "exit":
             return
@@ -92,7 +99,9 @@ class KinesisDataViewer:
             "Target Shard?",
             choices=self.shard_ids,
         ).ask()
-        records_in_shard: dict = self.all_records[target_shard]
+        records_in_shard: list[dict] = self._dict_to_list(
+            self.all_records[target_shard]
+        )
 
         # 出力先を選択
         output = questionary.select(
@@ -105,6 +114,29 @@ class KinesisDataViewer:
             self._output_terminal(target_shard, records_in_shard)
         elif output == "csv":
             self._output_csv(target_shard, records_in_shard)
+
+    def show_recent_records(self) -> None:
+        """選択したシャードの最近100レコードを出力する"""
+        # シャード情報取得
+        self.shard_ids = self.shard_ids or (self._list_shards())
+        # レコード取得
+        self.all_records = self.all_records or (self._get_records())
+
+        # 出力対象のシャード選択
+        target_shard = questionary.select(
+            "Target Shard?",
+            choices=self.shard_ids,
+        ).ask()
+        records_in_shard: list[dict] = self._dict_to_list(
+            self.all_records[target_shard]
+        )
+        sorted_records = sorted(
+            records_in_shard, key=lambda d: d[SEQ_NUM], reverse=True
+        )
+        recent_records = [record for i, record in enumerate(sorted_records) if i <= 100]
+
+        # 結果を出力
+        self._output_terminal(target_shard, recent_records)
 
     def search_record(self) -> None:
         """指定されたキーワードでレコードのData部を検索し、結果をターミナルに表示する"""
@@ -227,7 +259,7 @@ class KinesisDataViewer:
         return shard_map
 
     def _output_terminal(
-        self, shard_name: str, records_in_shard: dict[str, dict]
+        self, shard_name: str, records_in_shard: list[dict[str, str]]
     ) -> None:
         """レコードリストをターミナルに出力"""
         table = Table(
@@ -235,26 +267,26 @@ class KinesisDataViewer:
             header_style="bold magenta",
             title=f"List Records: {self.target_stream_name}: {shard_name}",
         )
-        table.add_column(SEQ_NUM, style="bold", width=70)
+        table.add_column(NUMBER, justify="center")
+        table.add_column(SEQ_NUM, style="bold", width=60)
         table.add_column(PARTITION_KEY)
         table.add_column(DATA)
         table.add_column(TIMESTAMP)
-        for sequenceNum, record in records_in_shard.items():
+        for index, record in enumerate(records_in_shard):
             table.add_row(
-                sequenceNum,
+                str(index),
+                record[SEQ_NUM],
                 record[PARTITION_KEY],
                 record[DATA],
                 record[TIMESTAMP],
             )
         rich.print(table)
 
-    def _output_csv(self, shard_name: str, records_in_shard: dict[str, dict]) -> None:
+    def _output_csv(
+        self, shard_name: str, records_in_shard: list[dict[str, str]]
+    ) -> None:
         """レコードリストをcsvファイルに出力"""
-        data = [
-            dict(**{SEQ_NUM: seqNum}, **record)
-            for seqNum, record in records_in_shard.items()
-        ]
-        sorted_data = sorted(data, key=lambda d: d[SEQ_NUM])
+
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         output_filename = (
             f"kdv_output_{self.target_stream_name}_{shard_name}_{timestamp}.csv"
@@ -262,11 +294,18 @@ class KinesisDataViewer:
         output_path = os.path.join("dist", output_filename)
         os.makedirs("dist", exist_ok=True)
         with open(output_path, mode="w", newline="") as file:
-            writer = csv.DictWriter(file, fieldnames=sorted_data[0].keys())
+            writer = csv.DictWriter(file, fieldnames=records_in_shard[0].keys())
             writer.writeheader()
-            writer.writerows(sorted_data)
+            writer.writerows(records_in_shard)
 
         rich.print(f"Output written to CSV file '{output_filename}'.")
+
+    def _dict_to_list(self, records_in_shard: dict[int, dict]) -> list[dict]:
+        """dictionaryのkeyとvalueを分解し、dictionaryのlistとして再構成する"""
+        return [
+            dict(**{SEQ_NUM: seqNum}, **record)
+            for seqNum, record in records_in_shard.items()
+        ]
 
 
 if __name__ == "__main__":
