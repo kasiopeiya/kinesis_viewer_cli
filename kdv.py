@@ -41,8 +41,8 @@ class KinesisDataViewer:
         ).ask()
         print(self.target_stream_name)
 
-        self.shard_ids: list[str] = []
-        self.all_records: dict = {}
+        self.shard_ids: tuple[str]
+        self.all_records: dict
 
     def main(self) -> None:
         # 操作コマンドの選択
@@ -69,6 +69,7 @@ class KinesisDataViewer:
         table.add_column(LAST_ADDED_TIME)
         for shard_id, records_in_shard in self.all_records.items():
             if not records_in_shard:
+                # レコードが１件もない場合
                 numOfRecords = "0"
                 last_added_time = "-"
             else:
@@ -79,7 +80,7 @@ class KinesisDataViewer:
             table.add_row(shard_id, numOfRecords, last_added_time)
         rich.print(table)
 
-    def dump_records(self):
+    def dump_records(self) -> None:
         """選択したシャードのレコード一覧を出力する"""
         # シャード情報取得
         self.shard_ids = self.shard_ids or (self._list_shards())
@@ -91,7 +92,7 @@ class KinesisDataViewer:
             "Target Shard?",
             choices=self.shard_ids,
         ).ask()
-        records_in_shard = self.all_records[target_shard]
+        records_in_shard: dict = self.all_records[target_shard]
 
         # 出力先を選択
         output = questionary.select(
@@ -140,16 +141,16 @@ class KinesisDataViewer:
                     )
         return target_records
 
-    def _get_stream_names(self) -> list[str]:
+    def _get_stream_names(self) -> tuple[str]:
         """対象アカウント、リージョンに存在するKinesis Data Streams DataStreamを全て取得する"""
         response = self.kinesis_client.list_streams(Limit=100)
-        return response["StreamNames"]
+        return tuple(response["StreamNames"])
 
-    def _list_shards(self) -> list[str]:
+    def _list_shards(self) -> tuple[str]:
         """処理対象DataStreamのシャードID一覧を取得する"""
         response = self.kinesis_client.list_shards(StreamName=self.target_stream_name)
         shard_ids = [shard[SHARD_ID] for shard in response["Shards"]]
-        return shard_ids
+        return tuple(shard_ids)
 
     def _get_records(self) -> dict[str, dict[int, dict[str, str]]]:
         """処理対象DataStreamに格納されている全てのレコードを取得する
@@ -173,6 +174,7 @@ class KinesisDataViewer:
         self.shard_ids = self.shard_ids or (self._list_shards())
         shard_map = {}
 
+        # シャードからレコードの読み取り処理、マルチスレッドで実行
         with ThreadPoolExecutor(max_workers=4) as executor:
             results = executor.map(self._read_shard_records, self.shard_ids)
         shard_map = dict(chain.from_iterable(d.items() for d in list(results)))
