@@ -1,6 +1,8 @@
 import csv
 import datetime
 import os
+from concurrent.futures import ThreadPoolExecutor
+from itertools import chain
 
 import boto3
 import questionary
@@ -171,31 +173,25 @@ class KinesisDataViewer:
         self.shard_ids = self.shard_ids or (self._list_shards())
         shard_map = {}
 
-        # レコード取得のプログレスバーを表示
-        with rich.progress.Progress() as progress:
-            task = progress.add_task(
-                "[green]Getting Records...", total=len(self.shard_ids)
-            )
-            for shard_id in self.shard_ids:
-                shard_map[shard_id] = self._read_shard_records(shard_id)
-                progress.update(task, advance=1)
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            results = executor.map(self._read_shard_records, self.shard_ids)
+        shard_map = dict(chain.from_iterable(d.items() for d in list(results)))
         return shard_map
 
-    def _read_shard_records(self, shard_id: str) -> dict[int, dict[str, str]]:
+    def _read_shard_records(
+        self, shard_id: str
+    ) -> dict[str, dict[int, dict[str, str]]]:
         """シャード内の全てのレコードを取得する
 
         Return Example:
           {
-            '49657051368801430459340561020608066337892395447780114434':
-              'Data': '{"recordId":"RCS3ffmbiL","requestId":"1-3-diHOsUpMZsWnB5Bp",'
-              'PartitionKey': 'RCS3ffmbiL'
-              'ApproximateArrivalTimestamp': '2024-10-24 14:23:43 JST'
+            'shardId-000000000000': {
+              '49657051368801430459340561020608066337892395447780114434': {
+                'Data': '{"recordId":"RCS3ffmbiL","requestId":"1-3-diHOsUpMZsWnB5Bp",'
+                'PartitionKey': 'RCS3ffmbiL'
+                'ApproximateArrivalTimestamp': '2024-10-24 14:23:43 JST'
+              }
             }
-            '49657051368801430459340561020609275263712010076954820610': {
-              'Data': '{"recordId":"4l7RHBOOWj","requestId":"1-3-diHOsUpMZsWnB5Bp",'
-              'PartitionKey': '4l7RHBOOWj'
-              'ApproximateArrivalTimestamp': '2024-10-24 14:23:43 JST'
-            },
           }
         """
         response = self.kinesis_client.get_shard_iterator(
@@ -205,6 +201,7 @@ class KinesisDataViewer:
         )
 
         shard_iterator = response["ShardIterator"]
+        shard_map = {}
         records_in_shard = {}
 
         while True:
@@ -224,7 +221,8 @@ class KinesisDataViewer:
 
             # 次のイテレーターを取得
             shard_iterator = response["NextShardIterator"]
-        return records_in_shard
+        shard_map[shard_id] = records_in_shard
+        return shard_map
 
     def _output_terminal(
         self, shard_name: str, records_in_shard: dict[str, dict]
