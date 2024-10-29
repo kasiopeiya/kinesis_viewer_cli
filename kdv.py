@@ -41,8 +41,8 @@ class KinesisDataViewer:
         ).ask()
         print(self.target_stream_name)
 
-        self.shard_ids: tuple[str]
-        self.all_records: dict
+        self.shard_ids: tuple = ()
+        self.all_records: dict = {}
 
     def main(self) -> None:
         # 操作コマンドの選択
