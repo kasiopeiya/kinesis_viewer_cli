@@ -251,9 +251,10 @@ class KinesisDataViewer:
     def _output_csv(self, shard_name: str, records_in_shard: dict[str, dict]) -> None:
         """レコードリストをcsvファイルに出力"""
         data = [
-            dict(**record, **{SEQ_NUM: seqNum})
+            dict(**{SEQ_NUM: seqNum}, **record)
             for seqNum, record in records_in_shard.items()
         ]
+        sorted_data = sorted(data, key=lambda d: d[SEQ_NUM])
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         output_filename = (
             f"kdv_output_{self.target_stream_name}_{shard_name}_{timestamp}.csv"
@@ -261,9 +262,9 @@ class KinesisDataViewer:
         output_path = os.path.join("dist", output_filename)
         os.makedirs("dist", exist_ok=True)
         with open(output_path, mode="w", newline="") as file:
-            writer = csv.DictWriter(file, fieldnames=data[0].keys())
+            writer = csv.DictWriter(file, fieldnames=sorted_data[0].keys())
             writer.writeheader()
-            writer.writerows(data)
+            writer.writerows(sorted_data)
 
         rich.print(f"Output written to CSV file '{output_filename}'.")
 
