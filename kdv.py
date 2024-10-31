@@ -85,32 +85,21 @@ class KinesisDataViewer:
             table.add_row(shard_id, numOfRecords, last_added_time)
         rich.print(table)
 
-    def dump_records(self, target_shard: str = "", output: str = "") -> None:
+    def dump_records(self) -> None:
+        """選択したシャードのレコード一覧を出力する"""
+        self._dump_records(
+            target_shard=self._select_shard(), output=self._select_output()
+        )
+
+    def _dump_records(self, target_shard: str, output: str) -> None:
         """選択したシャードのレコード一覧を出力する"""
         # シャード情報取得
         self.shard_ids = self.shard_ids or (self._list_shards())
         # レコード取得
         self.all_records = self.all_records or (self._get_records())
 
-        # 出力対象のシャード選択
-        target_shard = (
-            target_shard
-            or questionary.select(
-                "Target Shard?",
-                choices=self.shard_ids,
-            ).ask()
-        )
         records_in_shard: list[dict] = self._dict_to_list(
             self.all_records[target_shard]
-        )
-
-        # 出力先を選択
-        output = (
-            output
-            or questionary.select(
-                "Output destination?",
-                choices=["terminal", "csv"],
-            ).ask()
         )
 
         # 結果を出力
@@ -119,21 +108,17 @@ class KinesisDataViewer:
         elif output == "csv":
             self._output_csv(target_shard, records_in_shard)
 
-    def show_recent_records(self, target_shard: str = "") -> None:
+    def show_recent_records(self) -> None:
+        """選択したシャードの最近100レコードを出力する"""
+        self._show_recent_records(target_shard=self._select_shard())
+
+    def _show_recent_records(self, target_shard: str) -> None:
         """選択したシャードの最近100レコードを出力する"""
         # シャード情報取得
         self.shard_ids = self.shard_ids or (self._list_shards())
         # レコード取得
         self.all_records = self.all_records or (self._get_records())
 
-        # 出力対象のシャード選択
-        target_shard = (
-            target_shard
-            or questionary.select(
-                "Target Shard?",
-                choices=self.shard_ids,
-            ).ask()
-        )
         records_in_shard: list[dict] = self._dict_to_list(
             self.all_records[target_shard]
         )
@@ -145,14 +130,17 @@ class KinesisDataViewer:
         # 結果を出力
         self._output_terminal(target_shard, recent_records)
 
-    def search_record(self, key: str = "") -> None:
+    def search_record(self) -> None:
         """指定されたキーワードでレコードのData部を検索し、結果をターミナルに表示する"""
+        self._search_record(key=self._enter_key())
+
+    def _search_record(self, key: str) -> None:
+        """指定されたキーワードでレコードのData部を検索し、結果をターミナルに表示する"""
+        if not key:
+            return
+
         # レコード取得
         self.all_records = self.all_records or (self._get_records())
-
-        # 検索文字列を入力
-        if not (key := key or questionary.text("Key?").ask()):
-            return
 
         # 検索文字列を含むレコードを検索
         if not (target_records := self._find_records_by_key(key)):
@@ -315,6 +303,23 @@ class KinesisDataViewer:
             dict(**{const.SEQ_NUM: seqNum}, **record)
             for seqNum, record in records_in_shard.items()
         ]
+
+    def _select_shard(self) -> str:
+        """ターミナルで対象のシャードを選択する"""
+        # シャード情報取得
+        self.shard_ids = self.shard_ids or (self._list_shards())
+
+        return questionary.select("Target Shard?", choices=self.shard_ids).ask()
+
+    def _select_output(self) -> str:
+        """ターミナルで結果の出力方法を選択する"""
+        return questionary.select(
+            "Output destination?", choices=["terminal", "csv"]
+        ).ask()
+
+    def _enter_key(self) -> str:
+        """ターミナルでレコード検索に使うkeyを入力する"""
+        return questionary.text("Key?").ask()
 
 
 if __name__ == "__main__":

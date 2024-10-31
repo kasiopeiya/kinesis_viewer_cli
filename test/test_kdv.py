@@ -89,7 +89,7 @@ class TestKinesisDataViewer:
         self.setup_sample_records()
 
         kdv = KinesisDataViewer(region=REGION, target_stream_name=self.stream_name)
-        kdv.dump_records(target_shard=self.shard_ids[0], output="terminal")
+        kdv._dump_records(target_shard=self.shard_ids[0], output="terminal")
 
         # ターミナルへの出力内容の確認
         captured = capsys.readouterr()
@@ -106,7 +106,7 @@ class TestKinesisDataViewer:
         self.setup_kinesis()
 
         kdv = KinesisDataViewer(region=REGION, target_stream_name=self.stream_name)
-        kdv.dump_records(target_shard=self.shard_ids[0], output="terminal")
+        kdv._dump_records(target_shard=self.shard_ids[0], output="terminal")
 
         # ターミナルへの出力内容の確認
         captured = capsys.readouterr()
@@ -122,7 +122,7 @@ class TestKinesisDataViewer:
         self.setup_sample_records()
 
         kdv = KinesisDataViewer(region=REGION, target_stream_name=self.stream_name)
-        kdv.dump_records(target_shard=self.shard_ids[0], output="csv")
+        kdv._dump_records(target_shard=self.shard_ids[0], output="csv")
 
         # csvファイル出力確認
         pattern = rf"dist/kdv_output_{self.stream_name}_{self.shard_ids[0]}_\d{{8}}_\d{{6}}\.csv"
@@ -137,7 +137,7 @@ class TestKinesisDataViewer:
         self.setup_sample_records()
 
         kdv = KinesisDataViewer(region=REGION, target_stream_name=self.stream_name)
-        kdv.show_recent_records(target_shard=self.shard_ids[0])
+        kdv._show_recent_records(target_shard=self.shard_ids[0])
 
         # ターミナルへの出力内容の確認
         captured = capsys.readouterr()
@@ -155,7 +155,7 @@ class TestKinesisDataViewer:
         self.setup_kinesis()
 
         kdv = KinesisDataViewer(region=REGION, target_stream_name=self.stream_name)
-        kdv.show_recent_records(target_shard=self.shard_ids[0])
+        kdv._show_recent_records(target_shard=self.shard_ids[0])
 
         # ターミナルへの出力内容の確認
         captured = capsys.readouterr()
@@ -172,7 +172,7 @@ class TestKinesisDataViewer:
         self.setup_sample_records()
 
         kdv = KinesisDataViewer(region=REGION, target_stream_name=self.stream_name)
-        kdv.search_record(key="hello world")
+        kdv._search_record(key="hello world")
 
         # ターミナルへの出力内容の確認
         captured = capsys.readouterr()
@@ -184,7 +184,7 @@ class TestKinesisDataViewer:
         self.setup_sample_records()
 
         kdv = KinesisDataViewer(region=REGION, target_stream_name=self.stream_name)
-        kdv.search_record(key="hoge")
+        kdv._search_record(key="hoge")
 
         # ターミナルへの出力内容の確認
         captured = capsys.readouterr()
