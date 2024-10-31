@@ -143,7 +143,7 @@ class KinesisDataViewer:
         self.all_records = self.all_records or (self._get_records())
 
         # 検索文字列を含むレコードを検索
-        if not (target_records := self._find_records_by_key(key)):
+        if not (target_records := self._find_records_by_key(str(key))):
             print("Could not find record")
             return
 
