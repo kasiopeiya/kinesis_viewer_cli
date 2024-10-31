@@ -4,6 +4,7 @@ import random
 import re
 
 import boto3
+import pytest
 from moto import mock_aws
 
 import const
@@ -50,23 +51,6 @@ class TestKinesisDataViewer:
             StreamARN=self.stream_arn,
         )
 
-        # # レコードを取得
-        # for shard in self.shard_list:
-        #   shard_iterator = self.client.get_shard_iterator(
-        #       StreamName=self.stream_name,
-        #       ShardId=shard["ShardId"],
-        #       ShardIteratorType="TRIM_HORIZON"
-        #   )["ShardIterator"]
-        #   records = self.client.get_records(ShardIterator=shard_iterator)
-        #   record_data = records["Records"][0]["Data"]
-
-        # data = {"key": "value"}
-        # response = client.put_record(
-        #     StreamName=self.stream_name,
-        #     Data=json.dumps(data),
-        #     PartitionKey="partition_key"
-        # )
-
     @mock_aws
     def test_summary(self, capsys):
         self.setup_kinesis()
@@ -84,6 +68,7 @@ class TestKinesisDataViewer:
         assert captured.out.count("shardId-") == 4
 
     @mock_aws
+    @pytest.mark.no_records
     def test_summary_no_records(self, capsys):
         self.setup_kinesis()
 
@@ -116,6 +101,7 @@ class TestKinesisDataViewer:
         assert "hello world" in captured.out
 
     @mock_aws
+    @pytest.mark.no_records
     def test_dump_records_terminal_no_records(self, capsys):
         self.setup_kinesis()
 
@@ -164,6 +150,7 @@ class TestKinesisDataViewer:
         assert captured.out.count("hello world") <= 100
 
     @mock_aws
+    @pytest.mark.no_records
     def test_show_recent_records_no_records(self, capsys):
         self.setup_kinesis()
 
