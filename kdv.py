@@ -10,37 +10,35 @@ import rich
 import rich.progress
 from rich.table import Table
 
-SEQ_NUM = "SequenceNumber"
-PARTITION_KEY = "PartitionKey"
-DATA = "Data"
-TIMESTAMP = "ApproximateArrivalTimestamp"
-SHARD_ID = "ShardId"
-NUM_OF_RECORDS = "NumOfRecords"
-LAST_ADDED_TIME = "LastAddedTime"
-NUMBER = "No"
+import const
 
 
 class KinesisDataViewer:
-    def __init__(self) -> None:
+    def __init__(self, region: str = "", target_stream_name: str = "") -> None:
         # リージョンの選択
         ec2_client = boto3.client("ec2")
         regions = ec2_client.describe_regions()
         region_names = [region["RegionName"] for region in regions["Regions"]]
-        region = questionary.select(
-            "Target Region?", choices=region_names, default="ap-northeast-1"
-        ).ask()
-        self.kinesis_client = boto3.client("kinesis", region_name=region)
+        region_name = (
+            region
+            or questionary.select(
+                "Target Region?", choices=region_names, default="ap-northeast-1"
+            ).ask()
+        )
+        self.kinesis_client = boto3.client("kinesis", region_name=region_name)
 
         # 操作対象のDataStreamの選択
         data_stream_names = self._get_stream_names()
         if not data_stream_names:
             print("No data streams found")
             exit(1)
-        self.target_stream_name = questionary.select(
-            "Target Stream Name?",
-            choices=data_stream_names,
-        ).ask()
-        print(self.target_stream_name)
+        self.target_stream_name = (
+            target_stream_name
+            or questionary.select(
+                "Target Stream Name?",
+                choices=data_stream_names,
+            ).ask()
+        )
 
         self.shard_ids: tuple = ()
         self.all_records: dict = {}
@@ -71,9 +69,9 @@ class KinesisDataViewer:
         table = Table(
             show_header=True, header_style="bold magenta", title="Data Stream Summary"
         )
-        table.add_column(SHARD_ID, style="bold", width=25)
-        table.add_column(NUM_OF_RECORDS)
-        table.add_column(LAST_ADDED_TIME)
+        table.add_column(const.SHARD_ID, style="bold", width=25)
+        table.add_column(const.NUM_OF_RECORDS)
+        table.add_column(const.LAST_ADDED_TIME)
         for shard_id, records_in_shard in self.all_records.items():
             if not records_in_shard:
                 # レコードが１件もない場合
@@ -83,11 +81,11 @@ class KinesisDataViewer:
                 numOfRecords = str(len(records_in_shard))
                 maxSequenceNum = max(records_in_shard.keys())
                 latest_record = records_in_shard[maxSequenceNum]
-                last_added_time = latest_record[TIMESTAMP]
+                last_added_time = latest_record[const.TIMESTAMP]
             table.add_row(shard_id, numOfRecords, last_added_time)
         rich.print(table)
 
-    def dump_records(self) -> None:
+    def dump_records(self, target_shard: str = "", output: str = "") -> None:
         """選択したシャードのレコード一覧を出力する"""
         # シャード情報取得
         self.shard_ids = self.shard_ids or (self._list_shards())
@@ -95,19 +93,25 @@ class KinesisDataViewer:
         self.all_records = self.all_records or (self._get_records())
 
         # 出力対象のシャード選択
-        target_shard = questionary.select(
-            "Target Shard?",
-            choices=self.shard_ids,
-        ).ask()
+        target_shard = (
+            target_shard
+            or questionary.select(
+                "Target Shard?",
+                choices=self.shard_ids,
+            ).ask()
+        )
         records_in_shard: list[dict] = self._dict_to_list(
             self.all_records[target_shard]
         )
 
         # 出力先を選択
-        output = questionary.select(
-            "Output destination?",
-            choices=["terminal", "csv"],
-        ).ask()
+        output = (
+            output
+            or questionary.select(
+                "Output destination?",
+                choices=["terminal", "csv"],
+            ).ask()
+        )
 
         # 結果を出力
         if output == "terminal":
@@ -115,7 +119,7 @@ class KinesisDataViewer:
         elif output == "csv":
             self._output_csv(target_shard, records_in_shard)
 
-    def show_recent_records(self) -> None:
+    def show_recent_records(self, target_shard: str = "") -> None:
         """選択したシャードの最近100レコードを出力する"""
         # シャード情報取得
         self.shard_ids = self.shard_ids or (self._list_shards())
@@ -123,28 +127,31 @@ class KinesisDataViewer:
         self.all_records = self.all_records or (self._get_records())
 
         # 出力対象のシャード選択
-        target_shard = questionary.select(
-            "Target Shard?",
-            choices=self.shard_ids,
-        ).ask()
+        target_shard = (
+            target_shard
+            or questionary.select(
+                "Target Shard?",
+                choices=self.shard_ids,
+            ).ask()
+        )
         records_in_shard: list[dict] = self._dict_to_list(
             self.all_records[target_shard]
         )
         sorted_records = sorted(
-            records_in_shard, key=lambda d: d[SEQ_NUM], reverse=True
+            records_in_shard, key=lambda d: d[const.SEQ_NUM], reverse=True
         )
         recent_records = [record for i, record in enumerate(sorted_records) if i <= 100]
 
         # 結果を出力
         self._output_terminal(target_shard, recent_records)
 
-    def search_record(self) -> None:
+    def search_record(self, key: str = "") -> None:
         """指定されたキーワードでレコードのData部を検索し、結果をターミナルに表示する"""
         # レコード取得
         self.all_records = self.all_records or (self._get_records())
 
         # 検索文字列を入力
-        if not (key := questionary.text("Key?").ask()):
+        if not (key := key or questionary.text("Key?").ask()):
             return
 
         # 検索文字列を含むレコードを検索
@@ -161,14 +168,14 @@ class KinesisDataViewer:
         target_records = []
         for shard_id, records in self.all_records.items():
             for seqNum, data_item in records.items():
-                if key in data_item[DATA]:
+                if key in data_item[const.DATA]:
                     target_records.append(
                         {
-                            SHARD_ID: shard_id,
-                            SEQ_NUM: seqNum,
-                            DATA: data_item[DATA],
-                            PARTITION_KEY: data_item[PARTITION_KEY],
-                            TIMESTAMP: data_item[TIMESTAMP],
+                            const.SHARD_ID: shard_id,
+                            const.SEQ_NUM: seqNum,
+                            const.DATA: data_item[const.DATA],
+                            const.PARTITION_KEY: data_item[const.PARTITION_KEY],
+                            const.TIMESTAMP: data_item[const.TIMESTAMP],
                         }
                     )
         return target_records
@@ -181,7 +188,7 @@ class KinesisDataViewer:
     def _list_shards(self) -> tuple[str]:
         """処理対象DataStreamのシャードID一覧を取得する"""
         response = self.kinesis_client.list_shards(StreamName=self.target_stream_name)
-        shard_ids = [shard[SHARD_ID] for shard in response["Shards"]]
+        shard_ids = [shard[const.SHARD_ID] for shard in response["Shards"]]
         return tuple(shard_ids)
 
     def _get_records(self) -> dict[str, dict[int, dict[str, str]]]:
@@ -247,10 +254,12 @@ class KinesisDataViewer:
                 break
 
             for record in response["Records"]:
-                records_in_shard[record[SEQ_NUM]] = {
-                    DATA: record[DATA].decode("utf-8"),
-                    PARTITION_KEY: record["PartitionKey"],
-                    TIMESTAMP: record[TIMESTAMP].strftime("%Y-%m-%d %H:%M:%S %Z"),
+                records_in_shard[record[const.SEQ_NUM]] = {
+                    const.DATA: record[const.DATA].decode("utf-8"),
+                    const.PARTITION_KEY: record["PartitionKey"],
+                    const.TIMESTAMP: record[const.TIMESTAMP].strftime(
+                        "%Y-%m-%d %H:%M:%S %Z"
+                    ),
                 }
 
             # 次のイテレーターを取得
@@ -267,18 +276,18 @@ class KinesisDataViewer:
             header_style="bold magenta",
             title=f"List Records: {self.target_stream_name}: {shard_name}",
         )
-        table.add_column(NUMBER, justify="center")
-        table.add_column(SEQ_NUM, style="bold", width=60)
-        table.add_column(PARTITION_KEY)
-        table.add_column(DATA)
-        table.add_column(TIMESTAMP)
+        table.add_column(const.NUMBER, justify="center")
+        table.add_column(const.SEQ_NUM, style="bold", width=60)
+        table.add_column(const.PARTITION_KEY)
+        table.add_column(const.DATA)
+        table.add_column(const.TIMESTAMP)
         for index, record in enumerate(records_in_shard):
             table.add_row(
                 str(index),
-                record[SEQ_NUM],
-                record[PARTITION_KEY],
-                record[DATA],
-                record[TIMESTAMP],
+                record[const.SEQ_NUM],
+                record[const.PARTITION_KEY],
+                record[const.DATA],
+                record[const.TIMESTAMP],
             )
         rich.print(table)
 
@@ -303,7 +312,7 @@ class KinesisDataViewer:
     def _dict_to_list(self, records_in_shard: dict[int, dict]) -> list[dict]:
         """dictionaryのkeyとvalueを分解し、dictionaryのlistとして再構成する"""
         return [
-            dict(**{SEQ_NUM: seqNum}, **record)
+            dict(**{const.SEQ_NUM: seqNum}, **record)
             for seqNum, record in records_in_shard.items()
         ]
 
