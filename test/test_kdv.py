@@ -179,6 +179,30 @@ class TestKinesisDataViewer:
         assert f"{NUM_OF_TEST_RECORDS} record found" in captured.out
 
     @mock_aws
+    def test_search_record_key_blank(self, capsys):
+        self.setup_kinesis()
+        self.setup_sample_records()
+
+        kdv = KinesisDataViewer(region=REGION, target_stream_name=self.stream_name)
+        kdv._search_record(key="")
+
+        # ターミナルへの出力内容の確認
+        captured = capsys.readouterr()
+        assert captured.out == ""
+
+    @mock_aws
+    def test_search_record_key_number(self, capsys):
+        self.setup_kinesis()
+        self.setup_sample_records()
+
+        kdv = KinesisDataViewer(region=REGION, target_stream_name=self.stream_name)
+        kdv._search_record(key=1)
+
+        # ターミナルへの出力内容の確認
+        captured = capsys.readouterr()
+        assert captured.out != ""
+
+    @mock_aws
     def test_search_record_not_found(self, capsys):
         self.setup_kinesis()
         self.setup_sample_records()
