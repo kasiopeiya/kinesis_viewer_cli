@@ -52,6 +52,7 @@ class TestKinesisDataViewer:
         )
 
     @mock_aws
+    @pytest.mark.success
     def test_summary(self, capsys):
         self.setup_kinesis()
         self.setup_sample_records()
@@ -69,6 +70,7 @@ class TestKinesisDataViewer:
 
     @mock_aws
     @pytest.mark.no_records
+    @pytest.mark.success
     def test_summary_no_records(self, capsys):
         self.setup_kinesis()
 
@@ -84,6 +86,7 @@ class TestKinesisDataViewer:
         assert captured.out.count("shardId-") == 4
 
     @mock_aws
+    @pytest.mark.success
     def test_dump_records_terminal(self, capsys):
         self.setup_kinesis()
         self.setup_sample_records()
@@ -102,6 +105,7 @@ class TestKinesisDataViewer:
 
     @mock_aws
     @pytest.mark.no_records
+    @pytest.mark.success
     def test_dump_records_terminal_no_records(self, capsys):
         self.setup_kinesis()
 
@@ -117,6 +121,7 @@ class TestKinesisDataViewer:
         assert const.TIMESTAMP in captured.out
 
     @mock_aws
+    @pytest.mark.success
     def test_dump_records_csv(self):
         self.setup_kinesis()
         self.setup_sample_records()
@@ -132,6 +137,7 @@ class TestKinesisDataViewer:
         assert len(files) == 1
 
     @mock_aws
+    @pytest.mark.success
     def test_show_recent_records(self, capsys):
         self.setup_kinesis()
         self.setup_sample_records()
@@ -151,6 +157,7 @@ class TestKinesisDataViewer:
 
     @mock_aws
     @pytest.mark.no_records
+    @pytest.mark.success
     def test_show_recent_records_no_records(self, capsys):
         self.setup_kinesis()
 
@@ -167,6 +174,7 @@ class TestKinesisDataViewer:
         assert captured.out.count("hello world") == 0
 
     @mock_aws
+    @pytest.mark.success
     def test_search_record(self, capsys):
         self.setup_kinesis()
         self.setup_sample_records()
@@ -179,6 +187,7 @@ class TestKinesisDataViewer:
         assert f"{NUM_OF_TEST_RECORDS} record found" in captured.out
 
     @mock_aws
+    @pytest.mark.success
     def test_search_record_key_blank(self, capsys):
         self.setup_kinesis()
         self.setup_sample_records()
@@ -191,6 +200,7 @@ class TestKinesisDataViewer:
         assert captured.out == ""
 
     @mock_aws
+    @pytest.mark.success
     def test_search_record_key_number(self, capsys):
         self.setup_kinesis()
         self.setup_sample_records()
@@ -203,6 +213,7 @@ class TestKinesisDataViewer:
         assert captured.out != ""
 
     @mock_aws
+    @pytest.mark.success
     def test_search_record_not_found(self, capsys):
         self.setup_kinesis()
         self.setup_sample_records()
