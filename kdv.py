@@ -54,9 +54,9 @@ class KinesisDataViewer:
             "exit",
         )
         command = questionary.select("Command?", choices=commands).ask()
-        if command == "exit":
+        if not command or command == "exit":
             return
-        if command and (method := getattr(self, command, None)):
+        if method := getattr(self, command, None):
             method()
         self.main()
 
