@@ -66,9 +66,7 @@ class KinesisDataViewer:
         self.all_records = self.all_records or (self._get_records())
 
         #  出力
-        table = Table(
-            show_header=True, header_style="bold magenta", title="Data Stream Summary"
-        )
+        table = Table(show_header=True, header_style="bold magenta", title="Data Stream Summary")
         table.add_column(const.SHARD_ID, style="bold", width=25)
         table.add_column(const.NUM_OF_RECORDS)
         table.add_column(const.LAST_ADDED_TIME)
@@ -87,9 +85,7 @@ class KinesisDataViewer:
 
     def dump_records(self) -> None:
         """選択したシャードのレコード一覧を出力する"""
-        self._dump_records(
-            target_shard=self._select_shard(), output=self._select_output()
-        )
+        self._dump_records(target_shard=self._select_shard(), output=self._select_output())
 
     def _dump_records(self, target_shard: str, output: str) -> None:
         """選択したシャードのレコード一覧を出力する"""
@@ -98,9 +94,7 @@ class KinesisDataViewer:
         # レコード取得
         self.all_records = self.all_records or (self._get_records())
 
-        records_in_shard: list[dict] = self._dict_to_list(
-            self.all_records[target_shard]
-        )
+        records_in_shard: list[dict] = self._dict_to_list(self.all_records[target_shard])
 
         # 結果を出力
         if output == "terminal":
@@ -119,12 +113,8 @@ class KinesisDataViewer:
         # レコード取得
         self.all_records = self.all_records or (self._get_records())
 
-        records_in_shard: list[dict] = self._dict_to_list(
-            self.all_records[target_shard]
-        )
-        sorted_records = sorted(
-            records_in_shard, key=lambda d: d[const.SEQ_NUM], reverse=True
-        )
+        records_in_shard: list[dict] = self._dict_to_list(self.all_records[target_shard])
+        sorted_records = sorted(records_in_shard, key=lambda d: d[const.SEQ_NUM], reverse=True)
         recent_records = [record for i, record in enumerate(sorted_records) if i <= 100]
 
         # 結果を出力
@@ -207,9 +197,7 @@ class KinesisDataViewer:
         shard_map = dict(chain.from_iterable(d.items() for d in list(results)))
         return shard_map
 
-    def _read_shard_records(
-        self, shard_id: str
-    ) -> dict[str, dict[int, dict[str, str]]]:
+    def _read_shard_records(self, shard_id: str) -> dict[str, dict[int, dict[str, str]]]:
         """シャード内の全てのレコードを取得する
 
         Return Example:
@@ -235,9 +223,7 @@ class KinesisDataViewer:
 
         while True:
             # レコードを取得
-            response = self.kinesis_client.get_records(
-                ShardIterator=shard_iterator, Limit=1000
-            )
+            response = self.kinesis_client.get_records(ShardIterator=shard_iterator, Limit=1000)
             if not response["Records"]:
                 break
 
@@ -245,9 +231,7 @@ class KinesisDataViewer:
                 records_in_shard[record[const.SEQ_NUM]] = {
                     const.DATA: record[const.DATA].decode("utf-8"),
                     const.PARTITION_KEY: record["PartitionKey"],
-                    const.TIMESTAMP: record[const.TIMESTAMP].strftime(
-                        "%Y-%m-%d %H:%M:%S %Z"
-                    ),
+                    const.TIMESTAMP: record[const.TIMESTAMP].strftime("%Y-%m-%d %H:%M:%S %Z"),
                 }
 
             # 次のイテレーターを取得
@@ -255,9 +239,7 @@ class KinesisDataViewer:
         shard_map[shard_id] = records_in_shard
         return shard_map
 
-    def _output_terminal(
-        self, shard_name: str, records_in_shard: list[dict[str, str]]
-    ) -> None:
+    def _output_terminal(self, shard_name: str, records_in_shard: list[dict[str, str]]) -> None:
         """レコードリストをターミナルに出力"""
         table = Table(
             show_header=True,
@@ -279,15 +261,11 @@ class KinesisDataViewer:
             )
         rich.print(table)
 
-    def _output_csv(
-        self, shard_name: str, records_in_shard: list[dict[str, str]]
-    ) -> None:
+    def _output_csv(self, shard_name: str, records_in_shard: list[dict[str, str]]) -> None:
         """レコードリストをcsvファイルに出力"""
 
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        output_filename = (
-            f"kdv_output_{self.target_stream_name}_{shard_name}_{timestamp}.csv"
-        )
+        output_filename = f"kdv_output_{self.target_stream_name}_{shard_name}_{timestamp}.csv"
         output_path = os.path.join("dist", output_filename)
         os.makedirs("dist", exist_ok=True)
         with open(output_path, mode="w", newline="") as file:
@@ -300,8 +278,7 @@ class KinesisDataViewer:
     def _dict_to_list(self, records_in_shard: dict[int, dict]) -> list[dict]:
         """dictionaryのkeyとvalueを分解し、dictionaryのlistとして再構成する"""
         return [
-            dict(**{const.SEQ_NUM: seqNum}, **record)
-            for seqNum, record in records_in_shard.items()
+            dict(**{const.SEQ_NUM: seqNum}, **record) for seqNum, record in records_in_shard.items()
         ]
 
     def _select_shard(self) -> str:
@@ -313,9 +290,7 @@ class KinesisDataViewer:
 
     def _select_output(self) -> str:
         """ターミナルで結果の出力方法を選択する"""
-        return questionary.select(
-            "Output destination?", choices=["terminal", "csv"]
-        ).ask()
+        return questionary.select("Output destination?", choices=["terminal", "csv"]).ask()
 
     def _enter_key(self) -> str:
         """ターミナルでレコード検索に使うkeyを入力する"""

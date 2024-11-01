@@ -31,5 +31,6 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.semantic_release]
 branches = ["main"]
-# version_variable = "pyproject.toml:version"
-# version_source = "tag"
+
+[tool.black]
+line_length = 100
