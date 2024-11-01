@@ -7,8 +7,8 @@ import boto3
 import pytest
 from moto import mock_aws
 
-import const
-from kdv import KinesisDataViewer
+import src.const as const
+from src.kinesis_data_viewer import KinesisDataViewer
 
 REGION = "ap-northeast-1"
 STREAM_NAME = "kdv-test-stream"
