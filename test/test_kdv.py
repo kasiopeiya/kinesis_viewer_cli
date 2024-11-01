@@ -15,6 +15,15 @@ STREAM_NAME = "kdv-test-stream"
 NUM_OF_TEST_RECORDS = 30
 
 
+def _get_random_string(n: int = 10) -> str:
+    """ランダム文字列を生成"""
+    start = ord("a")
+    end = ord("z")
+
+    tmp = [chr(random.randint(start, end)) for _ in range(n)]
+    return "".join(tmp)
+
+
 class TestKinesisDataViewer:
     def setup_class(cls) -> None:
         cls.client = boto3.client("kinesis", region_name=REGION)
@@ -26,6 +35,7 @@ class TestKinesisDataViewer:
             os.remove(file)
 
     def setup_kinesis(self) -> None:
+        """Kinesis Data StreamsのDataStreamのMockリソースを作成する"""
         # ストリームを作成
         self.client.create_stream(
             StreamName=self.stream_name, StreamModeDetails={"StreamMode": "ON_DEMAND"}
@@ -39,11 +49,11 @@ class TestKinesisDataViewer:
         self.shard_ids = [d[const.SHARD_ID] for d in shard_list]
 
     def setup_sample_records(self) -> None:
+        """サンプルれコードを用意する"""
         # レコードを追加
         data = b"hello world"
         records = [
-            {"Data": data, "PartitionKey": self._get_random_string()}
-            for _ in range(NUM_OF_TEST_RECORDS)
+            {"Data": data, "PartitionKey": _get_random_string()} for _ in range(NUM_OF_TEST_RECORDS)
         ]
 
         self.client.put_records(
@@ -52,7 +62,6 @@ class TestKinesisDataViewer:
         )
 
     @mock_aws
-    @pytest.mark.success
     def test_summary(self, capsys):
         self.setup_kinesis()
         self.setup_sample_records()
@@ -70,7 +79,6 @@ class TestKinesisDataViewer:
 
     @mock_aws
     @pytest.mark.no_records
-    @pytest.mark.success
     def test_summary_no_records(self, capsys):
         self.setup_kinesis()
 
@@ -86,7 +94,6 @@ class TestKinesisDataViewer:
         assert captured.out.count("shardId-") == 4
 
     @mock_aws
-    @pytest.mark.success
     def test_dump_records_terminal(self, capsys):
         self.setup_kinesis()
         self.setup_sample_records()
@@ -105,7 +112,6 @@ class TestKinesisDataViewer:
 
     @mock_aws
     @pytest.mark.no_records
-    @pytest.mark.success
     def test_dump_records_terminal_no_records(self, capsys):
         self.setup_kinesis()
 
@@ -121,7 +127,6 @@ class TestKinesisDataViewer:
         assert const.TIMESTAMP in captured.out
 
     @mock_aws
-    @pytest.mark.success
     def test_dump_records_csv(self):
         self.setup_kinesis()
         self.setup_sample_records()
@@ -137,7 +142,6 @@ class TestKinesisDataViewer:
         assert len(files) == 1
 
     @mock_aws
-    @pytest.mark.success
     def test_show_recent_records(self, capsys):
         self.setup_kinesis()
         self.setup_sample_records()
@@ -157,7 +161,6 @@ class TestKinesisDataViewer:
 
     @mock_aws
     @pytest.mark.no_records
-    @pytest.mark.success
     def test_show_recent_records_no_records(self, capsys):
         self.setup_kinesis()
 
@@ -174,7 +177,6 @@ class TestKinesisDataViewer:
         assert captured.out.count("hello world") == 0
 
     @mock_aws
-    @pytest.mark.success
     def test_search_record(self, capsys):
         self.setup_kinesis()
         self.setup_sample_records()
@@ -187,7 +189,6 @@ class TestKinesisDataViewer:
         assert f"{NUM_OF_TEST_RECORDS} record found" in captured.out
 
     @mock_aws
-    @pytest.mark.success
     def test_search_record_key_blank(self, capsys):
         self.setup_kinesis()
         self.setup_sample_records()
@@ -200,7 +201,6 @@ class TestKinesisDataViewer:
         assert captured.out == ""
 
     @mock_aws
-    @pytest.mark.success
     def test_search_record_key_number(self, capsys):
         self.setup_kinesis()
         self.setup_sample_records()
@@ -213,7 +213,6 @@ class TestKinesisDataViewer:
         assert captured.out != ""
 
     @mock_aws
-    @pytest.mark.success
     def test_search_record_not_found(self, capsys):
         self.setup_kinesis()
         self.setup_sample_records()
@@ -224,11 +223,3 @@ class TestKinesisDataViewer:
         # ターミナルへの出力内容の確認
         captured = capsys.readouterr()
         assert "Could not find record" in captured.out
-
-    def _get_random_string(self) -> str:
-        start = ord("a")
-        end = ord("z")
-        n = 10
-
-        tmp = [chr(random.randint(start, end)) for _ in range(n)]
-        return "".join(tmp)
