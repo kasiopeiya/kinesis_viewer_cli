@@ -14,7 +14,6 @@ jsonargparse = "^4.33.2"
 questionary = "^2.0.1"
 rich = "^13.9.2"
 
-
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.3"
 black = "^24.10.0"
@@ -24,6 +23,15 @@ pre-commit = "^4.0.1"
 lxml = "^5.3.0"
 python-semantic-release = "^9.11.1"
 moto = "^5.0.18"
+poethepoet = "^0.29.0"
+
+[tool.poe.tasks]
+test = "python -m pytest test/ -s -vv --cov=src --cov-report term-missing"
+test-no-cov = "python -m pytest test/ -s -vv"
+format-check = "black --check ."
+format = "black ."
+typecheck = "mypy . --no-incremental"
+typecheck-report = "mypy . --html-report mypy_report"
 
 [build-system]
 requires = ["poetry-core"]
@@ -34,5 +42,6 @@ branches = ["main"]
 
 [tool.black]
 line_length = 100
+
 [tool.pytest.ini_options]
 testpaths = ["test"]
