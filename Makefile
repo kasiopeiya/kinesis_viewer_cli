@@ -1,7 +1,7 @@
 test:
-	TERM=unknown pytest --cov-report term-missing --cov=rich tests/ -vv
+	python -m pytest test/ -s -vv --cov=src --cov-report term-missing
 test-no-cov:
-	TERM=unknown pytest tests/ -vv
+	python -m pytest test/ -s -vv
 format-check:
 	black --check .
 format:
