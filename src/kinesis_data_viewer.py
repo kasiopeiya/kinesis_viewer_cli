@@ -1,6 +1,7 @@
 import csv
 import datetime
 import os
+import sys
 from concurrent.futures import ThreadPoolExecutor
 from itertools import chain
 
@@ -31,7 +32,7 @@ class KinesisDataViewer:
         data_stream_names = self._get_stream_names()
         if not data_stream_names:
             print("No data streams found")
-            exit(1)
+            sys.exit(0)
         self.target_stream_name = (
             target_stream_name
             or questionary.select(
@@ -45,19 +46,13 @@ class KinesisDataViewer:
 
     def main(self) -> None:
         # 操作コマンドの選択
-        rich.print("select 'exit' for data refresh")
-        commands = (
-            "summary",
-            "dump_records",
-            "show_recent_records",
-            "search_record",
-            "exit",
-        )
-        command = questionary.select("Command?", choices=commands).ask()
+        command = self._select_command()
         if not command or command == "exit":
+            print("exit kinesis viewer cli")
             return
-        if method := getattr(self, command, None):
-            method()
+        if (method := getattr(self, command, None)) is None:
+            raise ValueError("Invalid command name")
+        method()
         self.main()
 
     def summary(self):
@@ -280,6 +275,18 @@ class KinesisDataViewer:
         return [
             dict(**{const.SEQ_NUM: seqNum}, **record) for seqNum, record in records_in_shard.items()
         ]
+
+    def _select_command(self) -> str:
+        """ターミナルで結果の出力方法を選択する"""
+        rich.print("select 'exit' for data refresh")
+        commands = (
+            "summary",
+            "dump_records",
+            "show_recent_records",
+            "search_record",
+            "exit",
+        )
+        return questionary.select("Command?", choices=commands).ask()
 
     def _select_shard(self) -> str:
         """ターミナルで対象のシャードを選択する"""

@@ -49,7 +49,7 @@ class TestKinesisDataViewer:
         self.shard_ids = [d[const.SHARD_ID] for d in shard_list]
 
     def setup_sample_records(self) -> None:
-        """サンプルれコードを用意する"""
+        """サンプルレコードを用意する"""
         # レコードを追加
         data = b"hello world"
         records = [
@@ -60,6 +60,43 @@ class TestKinesisDataViewer:
             Records=records,
             StreamARN=self.stream_arn,
         )
+
+    def test_init_no_streams(self, capsys):
+        with pytest.raises(SystemExit) as exc_info:
+            KinesisDataViewer(region=REGION)
+
+            captured = capsys.readouterr()
+            assert "No data streams found" in captured.out
+            assert exc_info.value.code == 0
+
+    @mock_aws
+    def test_main_exit(self, capsys, monkeypatch):
+        self.setup_kinesis()
+
+        def return_exit(self) -> str:
+            return "exit"
+
+        kdv = KinesisDataViewer(region=REGION, target_stream_name=self.stream_name)
+        monkeypatch.setattr(kdv, "_select_command", return_exit.__get__(kdv, KinesisDataViewer))
+        kdv.main()
+
+        captured = capsys.readouterr()
+        assert "exit kinesis viewer cli" in captured.out
+
+    @mock_aws
+    def test_main_invalid_command(self, monkeypatch):
+        self.setup_kinesis()
+
+        def return_invalid_command(self) -> str:
+            return "Invalid Command Name"
+
+        kdv = KinesisDataViewer(region=REGION, target_stream_name=self.stream_name)
+        monkeypatch.setattr(
+            kdv, "_select_command", return_invalid_command.__get__(kdv, KinesisDataViewer)
+        )
+
+        with pytest.raises(ValueError):
+            kdv.main()
 
     @mock_aws
     def test_summary(self, capsys):
