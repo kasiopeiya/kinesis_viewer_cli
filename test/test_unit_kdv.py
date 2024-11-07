@@ -1,7 +1,7 @@
 import glob
 import os
-import random
 import re
+import test.util as util
 
 import boto3
 import pytest
@@ -11,23 +11,15 @@ import src.const as const
 from src.kinesis_data_viewer import KinesisDataViewer
 
 REGION = "ap-northeast-1"
-STREAM_NAME = "kdv-test-stream"
+STREAM_NAME = "kdv-unit-test-stream"
 NUM_OF_TEST_RECORDS = 30
-
-
-def _get_random_string(n: int = 10) -> str:
-    """ランダム文字列を生成"""
-    start = ord("a")
-    end = ord("z")
-
-    tmp = [chr(random.randint(start, end)) for _ in range(n)]
-    return "".join(tmp)
 
 
 class TestKinesisDataViewer:
     def setup_class(cls) -> None:
-        cls.client = boto3.client("kinesis", region_name=REGION)
         cls.stream_name = STREAM_NAME
+        cls.region = REGION
+        cls.client = boto3.client("kinesis", region_name=cls.region)
 
     def teardown_method(self):
         # distディレクトリ内のCSVファイルを削除
@@ -53,7 +45,8 @@ class TestKinesisDataViewer:
         # レコードを追加
         data = b"hello world"
         records = [
-            {"Data": data, "PartitionKey": _get_random_string()} for _ in range(NUM_OF_TEST_RECORDS)
+            {"Data": data, "PartitionKey": util.get_random_string()}
+            for _ in range(NUM_OF_TEST_RECORDS)
         ]
 
         self.client.put_records(
@@ -63,7 +56,7 @@ class TestKinesisDataViewer:
 
     def test_init_no_streams(self, capsys):
         with pytest.raises(SystemExit) as exc_info:
-            KinesisDataViewer(region=REGION)
+            KinesisDataViewer(region=self.region)
 
             captured = capsys.readouterr()
             assert "No data streams found" in captured.out
@@ -76,7 +69,7 @@ class TestKinesisDataViewer:
         def return_exit(self) -> str:
             return "exit"
 
-        kdv = KinesisDataViewer(region=REGION, target_stream_name=self.stream_name)
+        kdv = KinesisDataViewer(region=self.region, target_stream_name=self.stream_name)
         monkeypatch.setattr(kdv, "_select_command", return_exit.__get__(kdv, KinesisDataViewer))
         kdv.main()
 
@@ -90,7 +83,7 @@ class TestKinesisDataViewer:
         def return_invalid_command(self) -> str:
             return "Invalid Command Name"
 
-        kdv = KinesisDataViewer(region=REGION, target_stream_name=self.stream_name)
+        kdv = KinesisDataViewer(region=self.region, target_stream_name=self.stream_name)
         monkeypatch.setattr(
             kdv, "_select_command", return_invalid_command.__get__(kdv, KinesisDataViewer)
         )
@@ -103,7 +96,7 @@ class TestKinesisDataViewer:
         self.setup_kinesis()
         self.setup_sample_records()
 
-        kdv = KinesisDataViewer(region=REGION, target_stream_name=self.stream_name)
+        kdv = KinesisDataViewer(region=self.region, target_stream_name=self.stream_name)
         kdv.summary()
 
         # ターミナルへの出力内容の確認
@@ -119,7 +112,7 @@ class TestKinesisDataViewer:
     def test_summary_no_records(self, capsys):
         self.setup_kinesis()
 
-        kdv = KinesisDataViewer(region=REGION, target_stream_name=self.stream_name)
+        kdv = KinesisDataViewer(region=self.region, target_stream_name=self.stream_name)
         kdv.summary()
 
         # ターミナルへの出力内容の確認
@@ -135,7 +128,7 @@ class TestKinesisDataViewer:
         self.setup_kinesis()
         self.setup_sample_records()
 
-        kdv = KinesisDataViewer(region=REGION, target_stream_name=self.stream_name)
+        kdv = KinesisDataViewer(region=self.region, target_stream_name=self.stream_name)
         kdv._dump_records(target_shard=self.shard_ids[0], output="terminal")
 
         # ターミナルへの出力内容の確認
@@ -152,7 +145,7 @@ class TestKinesisDataViewer:
     def test_dump_records_terminal_no_records(self, capsys):
         self.setup_kinesis()
 
-        kdv = KinesisDataViewer(region=REGION, target_stream_name=self.stream_name)
+        kdv = KinesisDataViewer(region=self.region, target_stream_name=self.stream_name)
         kdv._dump_records(target_shard=self.shard_ids[0], output="terminal")
 
         # ターミナルへの出力内容の確認
@@ -168,7 +161,7 @@ class TestKinesisDataViewer:
         self.setup_kinesis()
         self.setup_sample_records()
 
-        kdv = KinesisDataViewer(region=REGION, target_stream_name=self.stream_name)
+        kdv = KinesisDataViewer(region=self.region, target_stream_name=self.stream_name)
         kdv._dump_records(target_shard=self.shard_ids[0], output="csv")
 
         # csvファイル出力確認
@@ -183,7 +176,7 @@ class TestKinesisDataViewer:
         self.setup_kinesis()
         self.setup_sample_records()
 
-        kdv = KinesisDataViewer(region=REGION, target_stream_name=self.stream_name)
+        kdv = KinesisDataViewer(region=self.region, target_stream_name=self.stream_name)
         kdv._show_recent_records(target_shard=self.shard_ids[0])
 
         # ターミナルへの出力内容の確認
@@ -201,7 +194,7 @@ class TestKinesisDataViewer:
     def test_show_recent_records_no_records(self, capsys):
         self.setup_kinesis()
 
-        kdv = KinesisDataViewer(region=REGION, target_stream_name=self.stream_name)
+        kdv = KinesisDataViewer(region=self.region, target_stream_name=self.stream_name)
         kdv._show_recent_records(target_shard=self.shard_ids[0])
 
         # ターミナルへの出力内容の確認
@@ -218,7 +211,7 @@ class TestKinesisDataViewer:
         self.setup_kinesis()
         self.setup_sample_records()
 
-        kdv = KinesisDataViewer(region=REGION, target_stream_name=self.stream_name)
+        kdv = KinesisDataViewer(region=self.region, target_stream_name=self.stream_name)
         kdv._search_record(key="hello world")
 
         # ターミナルへの出力内容の確認
@@ -230,7 +223,7 @@ class TestKinesisDataViewer:
         self.setup_kinesis()
         self.setup_sample_records()
 
-        kdv = KinesisDataViewer(region=REGION, target_stream_name=self.stream_name)
+        kdv = KinesisDataViewer(region=self.region, target_stream_name=self.stream_name)
         kdv._search_record(key="")
 
         # ターミナルへの出力内容の確認
@@ -242,7 +235,7 @@ class TestKinesisDataViewer:
         self.setup_kinesis()
         self.setup_sample_records()
 
-        kdv = KinesisDataViewer(region=REGION, target_stream_name=self.stream_name)
+        kdv = KinesisDataViewer(region=self.region, target_stream_name=self.stream_name)
         kdv._search_record(key=1)
 
         # ターミナルへの出力内容の確認
@@ -254,7 +247,7 @@ class TestKinesisDataViewer:
         self.setup_kinesis()
         self.setup_sample_records()
 
-        kdv = KinesisDataViewer(region=REGION, target_stream_name=self.stream_name)
+        kdv = KinesisDataViewer(region=self.region, target_stream_name=self.stream_name)
         kdv._search_record(key="hoge")
 
         # ターミナルへの出力内容の確認
