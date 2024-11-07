@@ -28,6 +28,7 @@ poethepoet = "^0.29.0"
 [tool.poe.tasks]
 test = "python -m pytest test/test_unit_kdv.py -s -vv --cov=src --cov-report term-missing"
 test-no-cov = "python -m pytest test/test_unit_kdv.py -s -vv"
+test-e2e = "python -m pytest --rootdir=. test/test_e2e_kdv.py -s -vv"
 format-check = "black --check ."
 format = "black ."
 typecheck = "mypy . --no-incremental"
