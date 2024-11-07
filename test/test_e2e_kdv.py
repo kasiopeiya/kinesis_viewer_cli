@@ -1,5 +1,6 @@
 import glob
 import os
+import re
 import subprocess
 import test.util as util
 
@@ -90,3 +91,141 @@ class TestKinesisDataViewer:
         assert const.NUM_OF_RECORDS in output
         assert const.LAST_ADDED_TIME in output
         assert output.count("shardId-") == 4
+
+    def test_dump_records_terminal(self):
+        """正常: dump_recordsコマンド実行(ターミナル出力)"""
+        # ツール実行
+        command = "dump_records"
+        process = subprocess.Popen(
+            [
+                "python",
+                "-m",
+                "kdv",
+                "main",
+                "--region",
+                self.region,
+                "--target_stream_name",
+                self.stream_name,
+                "--command",
+                command,
+                "--target_shard",
+                self.shard_ids[0],
+                "--dump_output",
+                "terminal",
+            ],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+
+        # 結果を受け取る
+        output, _ = process.communicate()
+
+        assert const.NUMBER in output
+        assert const.SEQ_NUM in output
+        assert const.PARTITION_KEY in output
+        assert const.DATA in output
+        assert const.TIMESTAMP in output
+        assert "hello world" in output
+
+    def test_dump_records_csv(self):
+        """正常: dump_recordsコマンド実行(csv出力)"""
+        # ツール実行
+        command = "dump_records"
+        process = subprocess.Popen(
+            [
+                "python",
+                "-m",
+                "kdv",
+                "main",
+                "--region",
+                self.region,
+                "--target_stream_name",
+                self.stream_name,
+                "--command",
+                command,
+                "--target_shard",
+                self.shard_ids[0],
+                "--dump_output",
+                "csv",
+            ],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        # これがないとエラーになるので注意
+        process.communicate()
+
+        pattern = rf"dist/kdv_output_{self.stream_name}_{self.shard_ids[0]}_\d{{8}}_\d{{6}}\.csv"
+        files = [f for f in glob.glob("dist/*.csv") if re.match(pattern, f)]
+
+        # 出力ファイルが1つであることを確認
+        assert len(files) == 1
+
+    def test_show_recent_records(self):
+        """正常: show_recent_recordsコマンド実行"""
+        # ツール実行
+        command = "show_recent_records"
+        process = subprocess.Popen(
+            [
+                "python",
+                "-m",
+                "kdv",
+                "main",
+                "--region",
+                self.region,
+                "--target_stream_name",
+                self.stream_name,
+                "--command",
+                command,
+                "--target_shard",
+                self.shard_ids[0],
+            ],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+
+        # 結果を受け取る
+        output, _ = process.communicate()
+
+        assert const.NUMBER in output
+        assert const.SEQ_NUM in output
+        assert const.PARTITION_KEY in output
+        assert const.DATA in output
+        assert const.TIMESTAMP in output
+        assert output.count("hello world") > 0
+        assert output.count("hello world") <= 100
+
+    def test_search_record(self):
+        """正常: search_keyコマンド実行"""
+        # ツール実行
+        command = "search_record"
+        process = subprocess.Popen(
+            [
+                "python",
+                "-m",
+                "kdv",
+                "main",
+                "--region",
+                self.region,
+                "--target_stream_name",
+                self.stream_name,
+                "--command",
+                command,
+                "--search_key",
+                "hello world",
+            ],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+
+        # 結果を受け取る
+        output, _ = process.communicate()
+
+        assert f"{NUM_OF_TEST_RECORDS} record found" in output
