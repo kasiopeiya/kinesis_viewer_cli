@@ -16,6 +16,10 @@ import src.const as const
 
 class KinesisDataViewer:
     def __init__(self, region: str = "", target_stream_name: str = "") -> None:
+        self.region = region
+        self.target_stream_name = target_stream_name
+        if region:
+            self.kinesis_client = boto3.client("kinesis", region_name=region)
         self.shard_ids: tuple = ()
         self.all_records: dict = {}
 
@@ -37,12 +41,13 @@ class KinesisDataViewer:
         regions = ec2_client.describe_regions()
         region_names = [region["RegionName"] for region in regions["Regions"]]
         region_name = (
-            region
+            self.region
+            or region
             or questionary.select(
                 "Target Region?", choices=region_names, default="ap-northeast-1"
             ).ask()
         )
-        self.kinesis_client = boto3.client("kinesis", region_name=region_name)
+        self.kinesis_client = boto3.client("kinesis", region_name)
 
         # 操作対象のDataStreamの選択
         data_stream_names = self._get_stream_names()
@@ -50,7 +55,8 @@ class KinesisDataViewer:
             print("No data streams found")
             sys.exit(0)
         self.target_stream_name = (
-            target_stream_name
+            self.target_stream_name
+            or target_stream_name
             or questionary.select(
                 "Target Stream Name?",
                 choices=data_stream_names,

@@ -54,9 +54,10 @@ class TestKinesisDataViewer:
             StreamARN=self.stream_arn,
         )
 
-    def test_init_no_streams(self, capsys):
+    def test_main_no_streams(self, capsys):
         with pytest.raises(SystemExit) as exc_info:
-            KinesisDataViewer(region=self.region)
+            kdv = KinesisDataViewer(region=self.region, target_stream_name=self.stream_name)
+            kdv.main(region=self.region)
 
             captured = capsys.readouterr()
             assert "No data streams found" in captured.out
@@ -67,6 +68,7 @@ class TestKinesisDataViewer:
         self.setup_kinesis()
 
         def return_exit(self) -> str:
+            """exitコマンドを返却するスタブ"""
             return "exit"
 
         kdv = KinesisDataViewer(region=self.region, target_stream_name=self.stream_name)
@@ -81,6 +83,7 @@ class TestKinesisDataViewer:
         self.setup_kinesis()
 
         def return_invalid_command(self) -> str:
+            """誤ったコマンド名を返却するスタブ"""
             return "Invalid Command Name"
 
         kdv = KinesisDataViewer(region=self.region, target_stream_name=self.stream_name)
