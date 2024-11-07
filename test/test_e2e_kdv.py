@@ -62,40 +62,31 @@ class TestKinesisDataViewer:
     def test_summary(self):
         """正常: summaryコマンド実行"""
         # ツール実行
-        output = self._execute_cli_tool(command="summary")
-
-        assert "Data Stream Summary" in output
-        assert const.SHARD_ID in output
-        assert const.NUM_OF_RECORDS in output
-        assert const.LAST_ADDED_TIME in output
-        assert output.count("shardId-") == 4
-
-    def _execute_cli_tool(self, command: str) -> str:
-        """CLIツールを実行する"""
+        command = "summary"
         process = subprocess.Popen(
-            ["python", "-m", "kdv"],
+            [
+                "python",
+                "-m",
+                "kdv",
+                "main",
+                "--region",
+                self.region,
+                "--target_stream_name",
+                self.stream_name,
+                "--command",
+                command,
+            ],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
         )
 
-        # mypyエラー対策、これがないとエラーになる
-        if process.stdin is None:
-            return ""
-
-        # region入力
-        process.stdin.write(f"{self.region}\n")
-        process.stdin.flush()
-
-        # ストリーム名入力
-        process.stdin.write(f"{self.stream_name}\n")
-        process.stdin.flush()
-
-        # コマンド入力
-        process.stdin.write(f"{command}\n")
-        process.stdin.flush()
-
         # 結果を受け取る
         output, _ = process.communicate()
-        return output
+
+        assert "Data Stream Summary" in output
+        assert const.SHARD_ID in output
+        assert const.NUM_OF_RECORDS in output
+        assert const.LAST_ADDED_TIME in output
+        assert output.count("shardId-") == 4

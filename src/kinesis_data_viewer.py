@@ -16,6 +16,22 @@ import src.const as const
 
 class KinesisDataViewer:
     def __init__(self, region: str = "", target_stream_name: str = "") -> None:
+        self.shard_ids: tuple = ()
+        self.all_records: dict = {}
+
+    def main(
+        self,
+        region: str = "",
+        target_stream_name: str = "",
+        command: str = "",
+        target_shard: str = "",
+        dump_output: str = "",
+        search_key: str = "",
+    ) -> None:
+        self.target_shard = target_shard
+        self.dump_output = dump_output
+        self.search_key = search_key
+
         # リージョンの選択
         ec2_client = boto3.client("ec2")
         regions = ec2_client.describe_regions()
@@ -41,19 +57,15 @@ class KinesisDataViewer:
             ).ask()
         )
 
-        self.shard_ids: tuple = ()
-        self.all_records: dict = {}
-
-    def main(self) -> None:
         # 操作コマンドの選択
-        command = self._select_command()
+        command = command or self._select_command()
         if not command or command == "exit":
             print("exit kinesis viewer cli")
             return
         if (method := getattr(self, command, None)) is None:
             raise ValueError("Invalid command name")
         method()
-        self.main()
+        self.main(region=region_name, target_stream_name=self.target_stream_name)
 
     def summary(self):
         """シャード一覧とシャードごとの格納レコード数などの情報を出力する"""
@@ -80,7 +92,9 @@ class KinesisDataViewer:
 
     def dump_records(self) -> None:
         """選択したシャードのレコード一覧を出力する"""
-        self._dump_records(target_shard=self._select_shard(), output=self._select_output())
+        target_shard = self.target_shard or self._select_shard()
+        output = self.dump_output or self._select_output()
+        self._dump_records(target_shard, output)
 
     def _dump_records(self, target_shard: str, output: str) -> None:
         """選択したシャードのレコード一覧を出力する"""
@@ -99,7 +113,8 @@ class KinesisDataViewer:
 
     def show_recent_records(self) -> None:
         """選択したシャードの最近100レコードを出力する"""
-        self._show_recent_records(target_shard=self._select_shard())
+        target_shard = self.target_shard or self._select_shard()
+        self._show_recent_records(target_shard)
 
     def _show_recent_records(self, target_shard: str) -> None:
         """選択したシャードの最近100レコードを出力する"""
@@ -117,7 +132,8 @@ class KinesisDataViewer:
 
     def search_record(self) -> None:
         """指定されたキーワードでレコードのData部を検索し、結果をターミナルに表示する"""
-        self._search_record(key=self._enter_key())
+        key = self.search_key or self._enter_key()
+        self._search_record(key)
 
     def _search_record(self, key: str) -> None:
         """指定されたキーワードでレコードのData部を検索し、結果をターミナルに表示する"""
