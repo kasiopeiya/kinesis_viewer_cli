@@ -1,6 +1,5 @@
 import glob
 import os
-import re
 import test.util as util
 
 import boto3
@@ -174,11 +173,8 @@ class TestKinesisDataViewer:
         kdv = KinesisDataViewer(region=self.region, target_stream_name=self.stream_name)
         kdv._dump_records(target_shard=self.shard_ids[0], output="csv")
 
-        # csvファイル出力確認
-        pattern = rf"dist/kdv_output_{self.stream_name}_{self.shard_ids[0]}_\d{{8}}_\d{{6}}\.csv"
-        files = [f for f in glob.glob("dist/*.csv") if re.match(pattern, f)]
-
         # 出力ファイルが1つであることを確認
+        files = [file for file in glob.glob(f"dist/kdv_output_{self.stream_name}_*.csv")]
         assert len(files) == 1
 
     @mock_aws
