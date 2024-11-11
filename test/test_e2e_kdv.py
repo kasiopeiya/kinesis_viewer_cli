@@ -1,6 +1,5 @@
 import glob
 import os
-import re
 import subprocess
 import test.util as util
 
@@ -158,10 +157,8 @@ class TestKinesisDataViewer:
         # これがないとエラーになるので注意
         process.communicate()
 
-        pattern = rf"dist/kdv_output_{self.stream_name}_{self.shard_ids[0]}_\d{{8}}_\d{{6}}\.csv"
-        files = [f for f in glob.glob("dist/*.csv") if re.match(pattern, f)]
-
         # 出力ファイルが1つであることを確認
+        files = [file for file in glob.glob(f"dist/kdv_output_{self.stream_name}_*.csv")]
         assert len(files) == 1
 
     def test_show_recent_records(self):
