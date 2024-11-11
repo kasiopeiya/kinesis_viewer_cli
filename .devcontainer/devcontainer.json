@@ -1,0 +1,22 @@
+{
+  "name": "kinesis-data-viewer-cli",
+  "service": "kdv",
+  "workspaceFolder": "/workspace",
+  "dockerComposeFile": "../docker-compose.yml",
+  "customizations": {
+      "vscode": {
+          "extensions": [
+              "editorconfig.editorconfig",
+              "oderwat.indent-rainbow",
+              "hediet.vscode-drawio",
+              "yzhang.markdown-all-in-one",
+              "csholmq.excel-to-markdown-table",
+              "github.vscode-github-actions",
+              "ms-python.mypy-type-checker",
+              "ms-python.vscode-pylance",
+              "ms-python.python",
+              "mikoz.black-py"
+          ]
+      }
+  }
+}

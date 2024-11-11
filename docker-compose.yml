@@ -1,0 +1,14 @@
+services:
+  kdv:
+    container_name: kinesis-data-viewer-cli
+    build: ./
+    tty: true
+    volumes:
+      - ./:/workspace:cached
+      - pytest-cache:/workspace/cdk.out
+      - ${HOME}/.aws/credentials:/root/.aws/credentials:ro
+      - ${HOME}/.aws/config:/root/.aws/config:ro
+    environment:
+      TZ: Japan
+volumes:
+  pytest-cache:
