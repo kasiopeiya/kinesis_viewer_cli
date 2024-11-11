@@ -54,9 +54,16 @@ class TestKinesisDataViewer:
             StreamARN=self.stream_arn,
         )
 
-    def test_main_no_streams(self, capsys):
+    def test_main_no_streams(self, capsys, monkeypatch):
+        def return_empty_list(self) -> list:
+            """空のリストを返却するスタブ"""
+            return []
+
         with pytest.raises(SystemExit) as exc_info:
             kdv = KinesisDataViewer(region=self.region, target_stream_name=self.stream_name)
+            monkeypatch.setattr(
+                kdv, "_get_stream_names", return_empty_list.__get__(kdv, KinesisDataViewer)
+            )
             kdv.main(region=self.region)
 
             captured = capsys.readouterr()
