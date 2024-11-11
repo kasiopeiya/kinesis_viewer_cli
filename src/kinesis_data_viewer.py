@@ -248,7 +248,7 @@ class KinesisDataViewer:
                 records_in_shard[record[const.SEQ_NUM]] = {
                     const.DATA: record[const.DATA].decode("utf-8"),
                     const.PARTITION_KEY: record["PartitionKey"],
-                    const.TIMESTAMP: record[const.TIMESTAMP].strftime("%Y-%m-%d %H:%M:%S %Z"),
+                    const.TIMESTAMP: record[const.TIMESTAMP].strftime("%Y-%m-%d %H:%M:%S.%f"),
                 }
 
             # 次のイテレーターを取得
