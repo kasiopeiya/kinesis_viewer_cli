@@ -12,6 +12,7 @@ import rich.progress
 from rich.table import Table
 
 import src.const as const
+import src.msg as msg
 
 
 class KinesisDataViewer:
@@ -52,7 +53,7 @@ class KinesisDataViewer:
         # 操作対象のDataStreamの選択
         data_stream_names = self._get_stream_names()
         if not data_stream_names:
-            print("No data streams found")
+            print(msg.NO_STREAM)
             sys.exit(0)
         self.target_stream_name = (
             self.target_stream_name
@@ -66,10 +67,10 @@ class KinesisDataViewer:
         # 操作コマンドの選択
         command = command or self._select_command()
         if not command or command == "exit":
-            print("exit kinesis viewer cli")
+            print(msg.EXIT)
             return
         if (method := getattr(self, command, None)) is None:
-            raise ValueError("Invalid command name")
+            raise ValueError(msg.INVALID_COMMAND)
         method()
         self.main(region=region_name, target_stream_name=self.target_stream_name)
 
@@ -79,7 +80,7 @@ class KinesisDataViewer:
         self.all_records = self.all_records or (self._get_records())
 
         #  出力
-        table = Table(show_header=True, header_style="bold magenta", title="Data Stream Summary")
+        table = Table(show_header=True, header_style="bold magenta", title=msg.SUMMARY_TITLE)
         table.add_column(const.SHARD_ID, style="bold", width=25)
         table.add_column(const.NUM_OF_RECORDS)
         table.add_column(const.LAST_ADDED_TIME)
@@ -151,7 +152,7 @@ class KinesisDataViewer:
 
         # 検索文字列を含むレコードを検索
         if not (target_records := self._find_records_by_key(str(key))):
-            print("Could not find record")
+            print(msg.NO_RECORD)
             return
 
         for target_record in target_records:
@@ -290,7 +291,7 @@ class KinesisDataViewer:
             writer.writeheader()
             writer.writerows(records_in_shard)
 
-        rich.print(f"Output written to CSV file '{output_filename}'.")
+        rich.print(f"{msg.OUTPUT_CSV} '{output_filename}'.")
 
     def _dict_to_list(self, records_in_shard: dict[int, dict]) -> list[dict]:
         """dictionaryのkeyとvalueを分解し、dictionaryのlistとして再構成する"""
@@ -300,7 +301,7 @@ class KinesisDataViewer:
 
     def _select_command(self) -> str:
         """ターミナルで結果の出力方法を選択する"""
-        rich.print("select 'exit' for data refresh")
+        rich.print(msg.SELECT_EXIT)
         commands = (
             "summary",
             "dump_records",

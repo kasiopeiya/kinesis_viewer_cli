@@ -1,0 +1,7 @@
+NO_STREAM = "No data streams found"
+EXIT = "exit kinesis viewer cli"
+INVALID_COMMAND = "Invalid command name"
+NO_RECORD = "Could not find record"
+OUTPUT_CSV = "Output written to CSV file"
+SUMMARY_TITLE = "Data Stream Summary"
+SELECT_EXIT = "select 'exit' for data refresh"

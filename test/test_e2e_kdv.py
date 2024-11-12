@@ -7,6 +7,7 @@ import test.util as util
 import boto3
 
 import src.const as const
+import src.msg as msg
 
 REGION = "ap-northeast-1"
 STREAM_NAME = f"kdv-e2e-test-stream-{sys.version_info.major}-{sys.version_info.minor}-{sys.version_info.micro}"
@@ -89,7 +90,7 @@ class TestKinesisDataViewer:
         # 結果を受け取る
         output, _ = process.communicate()
 
-        assert "Data Stream Summary" in output
+        assert msg.SUMMARY_TITLE in output
         assert const.SHARD_ID in output
         assert const.NUM_OF_RECORDS in output
         assert const.LAST_ADDED_TIME in output

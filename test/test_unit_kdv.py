@@ -7,6 +7,7 @@ import pytest
 from moto import mock_aws
 
 import src.const as const
+import src.msg as msg
 from src.kinesis_data_viewer import KinesisDataViewer
 
 REGION = "ap-northeast-1"
@@ -70,7 +71,7 @@ class TestKinesisDataViewer:
             kdv.main(region=self.region)
 
             captured = capsys.readouterr()
-            assert "No data streams found" in captured.out
+            assert msg.NO_STREAM in captured.out
             assert exc_info.value.code == 0
 
     @mock_aws
@@ -86,7 +87,7 @@ class TestKinesisDataViewer:
         kdv.main()
 
         captured = capsys.readouterr()
-        assert "exit kinesis viewer cli" in captured.out
+        assert msg.EXIT in captured.out
 
     @mock_aws
     def test_main_invalid_command(self, monkeypatch):
@@ -94,7 +95,7 @@ class TestKinesisDataViewer:
 
         def return_invalid_command(self) -> str:
             """誤ったコマンド名を返却するスタブ"""
-            return "Invalid Command Name"
+            return msg.INVALID_COMMAND
 
         kdv = KinesisDataViewer(region=self.region, target_stream_name=self.stream_name)
         monkeypatch.setattr(
@@ -114,7 +115,7 @@ class TestKinesisDataViewer:
 
         # ターミナルへの出力内容の確認
         captured = capsys.readouterr()
-        assert "Data Stream Summary " in captured.out
+        assert msg.SUMMARY_TITLE in captured.out
         assert const.SHARD_ID in captured.out
         assert const.NUM_OF_RECORDS in captured.out
         assert const.LAST_ADDED_TIME in captured.out
@@ -262,4 +263,4 @@ class TestKinesisDataViewer:
 
         # ターミナルへの出力内容の確認
         captured = capsys.readouterr()
-        assert "Could not find record" in captured.out
+        assert msg.NO_RECORD in captured.out
