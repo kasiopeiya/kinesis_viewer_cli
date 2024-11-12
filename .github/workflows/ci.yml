@@ -1,0 +1,60 @@
+########################################################################
+# format check, type check, Unit test, E2E test
+########################################################################
+
+name: ci-action
+run-name: ${{ github.workflow }} workflow
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      id-token: write
+      contents: read
+    strategy:
+      matrix:
+        python-version: [3.9, 3.10, 3.11, 3.12, 3.13]
+    steps:
+      - run: cat $GITHUB_EVENT_PATH
+      - run: lsb_release -d
+      - run: gh --version
+
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.ROLE_TO_ASSUME }}
+          aws-region: ap-northeast-1
+      - run: aws sts get-caller-identity
+
+      - name: setup python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: install poetry
+        uses: abatilo/actions-poetry@v2
+        with:
+          poetry-version: 1.8.4
+
+      - name: install package
+        run: poetry install --no-interaction --no-ansi
+
+      - name: black check format
+        run: poetry run poe format-check
+
+      - name: mypy typecheck
+        run: poetry run poe typecheck
+
+      - name: unit test
+        run: poetry run poe test-no-cov
+
+      - name: E2E test
+        run: poetry run poe test-e2e
