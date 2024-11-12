@@ -6,7 +6,7 @@ authors = ["kashio peiya <multistriata@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.13"
+python = "^3.9"
 typing-extensions = "^4.12.2"
 boto3 = "^1.35.41"
 boto3-stubs = "^1.35.41"
