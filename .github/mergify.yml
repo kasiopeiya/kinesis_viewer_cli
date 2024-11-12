@@ -1,0 +1,20 @@
+pull_request_rules:
+  - name: automatic merge of Dependabot PRs
+    actions:
+      queue:
+        name: default
+        method: squash
+        commit_message_template: |-
+          {{ title }} (#{{ number }})
+          {{ body }}
+    conditions:
+      - -title~=(WIP|wip)
+      - -label~=(blocked|do-not-merge)
+      - -merged
+      - -closed
+      - author=dependabot[bot]
+      - status-success=ci (3.9)
+      - status-success=ci (3.10)
+      - status-success=ci (3.11)
+      - status-success=ci (3.12)
+      - status-success=ci (3.13)
