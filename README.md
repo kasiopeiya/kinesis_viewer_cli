@@ -17,6 +17,7 @@ Kinesis Data Streams(KDS)のDataStreamに格納されたレコード情報を可
 - [テストの考え方](#テストの考え方)
   - [Unitテスト](#unitテスト)
   - [E2Eテスト](#e2eテスト)
+- [CI実施内容](#ci実施内容)
 
 
 ## 提供機能
@@ -129,3 +130,12 @@ Unitテスト(Solitary Tests)とE2Eテストを実施、利用サービスはKDS
 - pytestとsubprocessを使用
 - subprocessでツールをCLI実行させ出力を確認、これをE2Eとする
 - Testing Pyramidの考えに則り、E2Eテストケースは最小限とし、正常系の基本動作（いわゆるHappy Path）のみをテスト対象
+
+## CI実施内容
+
+以下をgithub actionsのmatrix機能を使用して、複数のPythonバージョンで実施
+
+- フォーマットチェック: black
+- 型チェック: mypy
+- Unit test
+- E2E test
