@@ -13,6 +13,10 @@ REGION = "ap-northeast-1"
 STREAM_NAME = "kdv-unit-test-stream"
 NUM_OF_TEST_RECORDS = 30
 
+# 出力幅の調整
+# 出力幅が狭いと、文字が省略されて適切に出力されず、assert失敗するため必須
+os.environ["COLUMNS"] = "500"
+
 
 class TestKinesisDataViewer:
     def setup_class(cls) -> None:
