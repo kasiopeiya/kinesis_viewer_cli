@@ -1,6 +1,7 @@
 import glob
 import os
 import subprocess
+import sys
 import test.util as util
 
 import boto3
@@ -8,7 +9,7 @@ import boto3
 import src.const as const
 
 REGION = "ap-northeast-1"
-STREAM_NAME = "kdv-e2e-test-stream"
+STREAM_NAME = f"kdv-e2e-test-stream-{sys.version_info.major}-{sys.version_info.minor}-{sys.version_info.micro}"
 NUM_OF_TEST_RECORDS = 30
 
 
