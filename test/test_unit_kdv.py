@@ -10,9 +10,9 @@ import src.const as const
 import src.msg as msg
 from src.kinesis_data_viewer import KinesisDataViewer
 
-REGION = "ap-northeast-1"
-STREAM_NAME = "kdv-unit-test-stream"
-NUM_OF_TEST_RECORDS = 30
+REGION = os.getenv("KDV_REGION") or "ap-northeast-1"
+STREAM_NAME = os.getenv("STREAM_NAME") or "kdv-unit-test-stream"
+NUM_OF_TEST_RECORDS = int(os.getenv("NUM_OF_TEST_RECORDS") or 30)
 
 
 class TestKinesisDataViewer:

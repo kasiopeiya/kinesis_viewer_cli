@@ -9,9 +9,10 @@ import boto3
 import src.const as const
 import src.msg as msg
 
-REGION = "ap-northeast-1"
-STREAM_NAME = f"kdv-e2e-test-stream-{sys.version_info.major}-{sys.version_info.minor}-{sys.version_info.micro}"
-NUM_OF_TEST_RECORDS = 30
+REGION = os.getenv("KDV_REGION") or "ap-northeast-1"
+PYTHON_VERSION = f"{sys.version_info.major}-{sys.version_info.minor}-{sys.version_info.micro}"
+STREAM_NAME = f'{os.getenv("STREAM_NAME") or "kdv-e2e-test-stream"}-{PYTHON_VERSION}'
+NUM_OF_TEST_RECORDS = int(os.getenv("NUM_OF_TEST_RECORDS") or 30)
 
 
 class TestKinesisDataViewer:
