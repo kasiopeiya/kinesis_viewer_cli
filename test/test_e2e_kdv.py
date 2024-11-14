@@ -16,11 +16,11 @@ NUM_OF_TEST_RECORDS = int(os.getenv("NUM_OF_TEST_RECORDS") or 30)
 
 
 class TestKinesisDataViewer:
-    stream_name: str | None = None
-    region: str | None = None
+    stream_name: str = ""
+    region: str = ""
     client = None
-    stream_arn: str | None = None
-    shard_ids: list[str] | None = None
+    stream_arn: str = ""
+    shard_ids: list[str] = []
 
     @classmethod
     @util.error_handling
