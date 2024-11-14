@@ -18,6 +18,13 @@ os.environ["COLUMNS"] = "500"
 
 
 class TestKinesisDataViewer:
+    stream_name: str | None = None
+    region: str | None = None
+    client = None
+    stream_arn: str | None = None
+    shard_ids: list[str] | None = None
+
+    @classmethod
     def setup_class(cls) -> None:
         """テスト準備、実際にKDS DataStreamを構築する"""
         cls.stream_name = STREAM_NAME
@@ -55,6 +62,7 @@ class TestKinesisDataViewer:
             StreamARN=cls.stream_arn,
         )
 
+    @classmethod
     def teardown_class(cls):
         """テストの後片付け"""
         # distディレクトリ内のCSVファイルを削除
