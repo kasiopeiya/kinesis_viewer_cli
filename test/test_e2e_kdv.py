@@ -35,14 +35,7 @@ class TestKinesisDataViewer:
         cls.client.create_stream(
             StreamName=cls.stream_name, StreamModeDetails={"StreamMode": "ON_DEMAND"}
         )
-
-        # ストリームがActive状態になるまで待機
-        while True:
-            status = cls.client.describe_stream(StreamName=cls.stream_name)["StreamDescription"][
-                "StreamStatus"
-            ]
-            if status == "ACTIVE":
-                break
+        cls._wait_for_stream_active(cls.client, cls.stream_name)
 
         # シャードIDを取得
         cls.stream_arn = cls.client.describe_stream(StreamName=cls.stream_name)[
@@ -72,6 +65,15 @@ class TestKinesisDataViewer:
 
         # データストリーム削除
         cls.client.delete_stream(StreamName=cls.stream_name)
+
+    @classmethod
+    def _wait_for_stream_active(cls, client, stream_name) -> None:
+        """ストリームがActive状態になるまで待機"""
+        while (
+            client.describe_stream(StreamName=stream_name)["StreamDescription"]["StreamStatus"]
+            != "ACTIVE"
+        ):
+            pass
 
     def test_summary(self):
         """正常: summaryコマンド実行"""
