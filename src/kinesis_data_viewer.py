@@ -8,7 +8,6 @@ from itertools import chain
 import boto3
 import questionary
 import rich
-import rich.progress
 from rich.table import Table
 
 import src.const as const
@@ -23,6 +22,14 @@ class KinesisDataViewer:
             self.kinesis_client = boto3.client("kinesis", region_name=region)
         self.shard_ids: tuple = ()
         self.all_records: dict = {}
+        # 選択可能なコマンドリスト
+        self.commands = (
+            "summary",
+            "dump_records",
+            "show_recent_records",
+            "search_record",
+            "exit",
+        )
 
     def main(
         self,
@@ -196,12 +203,12 @@ class KinesisDataViewer:
               '49657051368801430459340561020608066337892395447780114434': {
                 'Data': '{"recordId":"RCS3ffmbiL","requestId":"1-3-diHOsUpMZsWnB5Bp",'
                 'PartitionKey': 'RCS3ffmbiL'
-                'ApproximateArrivalTimestamp': '2024-10-24 14:23:43 JST'
+                'ApproximateArrivalTimestamp': '2024-10-24 14:23:43.000'
               }
               '49657051368801430459340561020609275263712010076954820610': {
                 'Data': '{"recordId":"4l7RHBOOWj","requestId":"1-3-diHOsUpMZsWnB5Bp",'
                 'PartitionKey': '4l7RHBOOWj'
-                'ApproximateArrivalTimestamp': '2024-10-24 14:23:43 JST'
+                'ApproximateArrivalTimestamp': '2024-10-24 14:23:43.001'
           │   },
             'shardId-000000000001': {
             ...
@@ -224,7 +231,7 @@ class KinesisDataViewer:
               '49657051368801430459340561020608066337892395447780114434': {
                 'Data': '{"recordId":"RCS3ffmbiL","requestId":"1-3-diHOsUpMZsWnB5Bp",'
                 'PartitionKey': 'RCS3ffmbiL'
-                'ApproximateArrivalTimestamp': '2024-10-24 14:23:43 JST'
+                'ApproximateArrivalTimestamp': '2024-10-24 14:23:43.000'
               }
             }
           }
@@ -281,7 +288,6 @@ class KinesisDataViewer:
 
     def _output_csv(self, shard_name: str, records_in_shard: list[dict[str, str]]) -> None:
         """レコードリストをcsvファイルに出力"""
-
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         output_filename = f"kdv_output_{self.target_stream_name}_{shard_name}_{timestamp}.csv"
         output_path = os.path.join("dist", output_filename)
@@ -302,14 +308,7 @@ class KinesisDataViewer:
     def _select_command(self) -> str:
         """ターミナルで結果の出力方法を選択する"""
         rich.print(msg.SELECT_EXIT)
-        commands = (
-            "summary",
-            "dump_records",
-            "show_recent_records",
-            "search_record",
-            "exit",
-        )
-        return questionary.select("Command?", choices=commands).ask()
+        return questionary.select("Command?", choices=self.commands).ask()
 
     def _select_shard(self) -> str:
         """ターミナルで対象のシャードを選択する"""
