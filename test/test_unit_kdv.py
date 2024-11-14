@@ -20,10 +20,10 @@ os.environ["COLUMNS"] = "500"
 
 
 class TestKinesisDataViewer:
-    def setup_class(cls) -> None:
-        cls.stream_name = STREAM_NAME
-        cls.region = REGION
-        cls.client = boto3.client("kinesis", region_name=cls.region)
+    def setup_method(self) -> None:
+        self.stream_name = STREAM_NAME
+        self.region = REGION
+        self.client = boto3.client("kinesis", region_name=self.region)
 
     def teardown_method(self):
         # distディレクトリ内のCSVファイルを削除
