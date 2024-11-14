@@ -14,10 +14,6 @@ REGION = "ap-northeast-1"
 STREAM_NAME = "kdv-unit-test-stream"
 NUM_OF_TEST_RECORDS = 30
 
-# 出力幅の調整
-# 出力幅が狭いと、文字が省略されて適切に出力されず、assert失敗するため必須
-os.environ["COLUMNS"] = "500"
-
 
 class TestKinesisDataViewer:
     @util.error_handling
@@ -25,6 +21,8 @@ class TestKinesisDataViewer:
         self.stream_name = STREAM_NAME
         self.region = REGION
         self.client = boto3.client("kinesis", region_name=self.region)
+        # 出力幅が狭いと、文字が省略されて適切に出力されず、assert失敗するため必須
+        os.environ["COLUMNS"] = "500"
 
     @util.error_handling
     def teardown_method(self):

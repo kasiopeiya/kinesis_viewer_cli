@@ -13,9 +13,6 @@ REGION = "ap-northeast-1"
 STREAM_NAME = f"kdv-e2e-test-stream-{sys.version_info.major}-{sys.version_info.minor}-{sys.version_info.micro}"
 NUM_OF_TEST_RECORDS = 30
 
-# 出力幅が狭いと、文字が省略されて適切に出力されず、assert失敗するため必須
-os.environ["COLUMNS"] = "500"
-
 
 class TestKinesisDataViewer:
     stream_name: str | None = None
@@ -31,6 +28,8 @@ class TestKinesisDataViewer:
         cls.stream_name = STREAM_NAME
         cls.region = REGION
         cls.client = boto3.client("kinesis", region_name=cls.region)
+        # 出力幅が狭いと、文字が省略されて適切に出力されず、assert失敗するため必須
+        os.environ["COLUMNS"] = "500"
 
         # ストリームを作成
         cls.client.create_stream(
