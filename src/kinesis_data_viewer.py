@@ -2,16 +2,14 @@ import csv
 import datetime
 import os
 import sys
-from concurrent.futures import ThreadPoolExecutor
-from itertools import chain
 
-import boto3
 import questionary
 import rich
 from rich.table import Table
 
 import src.const as const
 import src.msg as msg
+from src.kinesis_client import KinesisClient
 
 
 class KinesisDataViewer:
@@ -19,7 +17,7 @@ class KinesisDataViewer:
         self.region = region
         self.target_stream_name = target_stream_name
         if region:
-            self.kinesis_client = boto3.client("kinesis", region_name=region)
+            self.kds_client = KinesisClient(region, target_stream_name)
         self.shard_ids: tuple = ()
         self.all_records: dict = {}
         # 選択可能なコマンドリスト
@@ -45,9 +43,7 @@ class KinesisDataViewer:
         self.search_key = search_key
 
         # リージョンの選択
-        ec2_client = boto3.client("ec2")
-        regions = ec2_client.describe_regions()
-        region_names = [region["RegionName"] for region in regions["Regions"]]
+        region_names = KinesisClient.get_regions()
         region_name = (
             self.region
             or region
@@ -55,10 +51,9 @@ class KinesisDataViewer:
                 "Target Region?", choices=region_names, default="ap-northeast-1"
             ).ask()
         )
-        self.kinesis_client = boto3.client("kinesis", region_name)
 
         # 操作対象のDataStreamの選択
-        data_stream_names = self._get_stream_names()
+        data_stream_names = KinesisClient.get_stream_names(region_name)
         if not data_stream_names:
             print(msg.NO_STREAM)
             sys.exit(0)
@@ -70,6 +65,7 @@ class KinesisDataViewer:
                 choices=data_stream_names,
             ).ask()
         )
+        self.kds_client = KinesisClient(region_name, self.target_stream_name)
 
         # 操作コマンドの選択
         command = command or self._select_command()
@@ -83,8 +79,10 @@ class KinesisDataViewer:
 
     def summary(self):
         """シャード一覧とシャードごとの格納レコード数などの情報を出力する"""
+        # シャード情報取得
+        self.shard_ids = self.shard_ids or (self.kds_client.list_shards())
         # レコード取得
-        self.all_records = self.all_records or (self._get_records())
+        self.all_records = self.all_records or (self.kds_client.get_records(self.shard_ids))
 
         #  出力
         table = Table(show_header=True, header_style="bold magenta", title=msg.SUMMARY_TITLE)
@@ -113,9 +111,9 @@ class KinesisDataViewer:
     def _dump_records(self, target_shard: str, output: str) -> None:
         """選択したシャードのレコード一覧を出力する"""
         # シャード情報取得
-        self.shard_ids = self.shard_ids or (self._list_shards())
+        self.shard_ids = self.shard_ids or (self.kds_client.list_shards())
         # レコード取得
-        self.all_records = self.all_records or (self._get_records())
+        self.all_records = self.all_records or (self.kds_client.get_records(self.shard_ids))
 
         records_in_shard: list[dict] = self._dict_to_list(self.all_records[target_shard])
 
@@ -133,9 +131,9 @@ class KinesisDataViewer:
     def _show_recent_records(self, target_shard: str) -> None:
         """選択したシャードの最近100レコードを出力する"""
         # シャード情報取得
-        self.shard_ids = self.shard_ids or (self._list_shards())
+        self.shard_ids = self.shard_ids or (self.kds_client.list_shards())
         # レコード取得
-        self.all_records = self.all_records or (self._get_records())
+        self.all_records = self.all_records or (self.kds_client.get_records(self.shard_ids))
 
         records_in_shard: list[dict] = self._dict_to_list(self.all_records[target_shard])
         sorted_records = sorted(records_in_shard, key=lambda d: d[const.SEQ_NUM], reverse=True)
@@ -154,8 +152,10 @@ class KinesisDataViewer:
         if not key:
             return
 
+        # シャード情報取得
+        self.shard_ids = self.shard_ids or (self.kds_client.list_shards())
         # レコード取得
-        self.all_records = self.all_records or (self._get_records())
+        self.all_records = self.all_records or (self.kds_client.get_records(self.shard_ids))
 
         # 検索文字列を含むレコードを検索
         if not (target_records := self._find_records_by_key(str(key))):
@@ -182,87 +182,6 @@ class KinesisDataViewer:
                         }
                     )
         return target_records
-
-    def _get_stream_names(self) -> tuple[str]:
-        """対象アカウント、リージョンに存在するKinesis Data Streams DataStreamを全て取得する"""
-        response = self.kinesis_client.list_streams(Limit=100)
-        return tuple(response["StreamNames"])
-
-    def _list_shards(self) -> tuple[str]:
-        """処理対象DataStreamのシャードID一覧を取得する"""
-        response = self.kinesis_client.list_shards(StreamName=self.target_stream_name)
-        shard_ids = [shard[const.SHARD_ID] for shard in response["Shards"]]
-        return tuple(shard_ids)
-
-    def _get_records(self) -> dict[str, dict[int, dict[str, str]]]:
-        """処理対象DataStreamに格納されている全てのレコードを取得する
-
-        Return Example:
-          {
-            'shardId-000000000000': {
-              '49657051368801430459340561020608066337892395447780114434': {
-                'Data': '{"recordId":"RCS3ffmbiL","requestId":"1-3-diHOsUpMZsWnB5Bp",'
-                'PartitionKey': 'RCS3ffmbiL'
-                'ApproximateArrivalTimestamp': '2024-10-24 14:23:43.000'
-              }
-              '49657051368801430459340561020609275263712010076954820610': {
-                'Data': '{"recordId":"4l7RHBOOWj","requestId":"1-3-diHOsUpMZsWnB5Bp",'
-                'PartitionKey': '4l7RHBOOWj'
-                'ApproximateArrivalTimestamp': '2024-10-24 14:23:43.001'
-          │   },
-            'shardId-000000000001': {
-            ...
-        """
-        self.shard_ids = self.shard_ids or (self._list_shards())
-        shard_map = {}
-
-        # シャードからレコードの読み取り処理、マルチスレッドで実行
-        with ThreadPoolExecutor(max_workers=4) as executor:
-            results = executor.map(self._read_shard_records, self.shard_ids)
-        shard_map = dict(chain.from_iterable(d.items() for d in list(results)))
-        return shard_map
-
-    def _read_shard_records(self, shard_id: str) -> dict[str, dict[int, dict[str, str]]]:
-        """シャード内の全てのレコードを取得する
-
-        Return Example:
-          {
-            'shardId-000000000000': {
-              '49657051368801430459340561020608066337892395447780114434': {
-                'Data': '{"recordId":"RCS3ffmbiL","requestId":"1-3-diHOsUpMZsWnB5Bp",'
-                'PartitionKey': 'RCS3ffmbiL'
-                'ApproximateArrivalTimestamp': '2024-10-24 14:23:43.000'
-              }
-            }
-          }
-        """
-        response = self.kinesis_client.get_shard_iterator(
-            StreamName=self.target_stream_name,
-            ShardId=shard_id,
-            ShardIteratorType="TRIM_HORIZON",
-        )
-
-        shard_iterator = response["ShardIterator"]
-        shard_map = {}
-        records_in_shard = {}
-
-        while True:
-            # レコードを取得
-            response = self.kinesis_client.get_records(ShardIterator=shard_iterator, Limit=1000)
-            if not response["Records"]:
-                break
-
-            for record in response["Records"]:
-                records_in_shard[record[const.SEQ_NUM]] = {
-                    const.DATA: record[const.DATA].decode("utf-8"),
-                    const.PARTITION_KEY: record["PartitionKey"],
-                    const.TIMESTAMP: record[const.TIMESTAMP].strftime("%Y-%m-%d %H:%M:%S.%f"),
-                }
-
-            # 次のイテレーターを取得
-            shard_iterator = response["NextShardIterator"]
-        shard_map[shard_id] = records_in_shard
-        return shard_map
 
     def _output_terminal(self, shard_name: str, records_in_shard: list[dict[str, str]]) -> None:
         """レコードリストをターミナルに出力"""
@@ -313,7 +232,7 @@ class KinesisDataViewer:
     def _select_shard(self) -> str:
         """ターミナルで対象のシャードを選択する"""
         # シャード情報取得
-        self.shard_ids = self.shard_ids or (self._list_shards())
+        self.shard_ids = self.shard_ids or (self.kds_client.list_shards())
 
         return questionary.select("Target Shard?", choices=self.shard_ids).ask()
 

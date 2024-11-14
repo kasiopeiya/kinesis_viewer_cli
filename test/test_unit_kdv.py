@@ -8,6 +8,7 @@ from moto import mock_aws
 
 import src.const as const
 import src.msg as msg
+from src.kinesis_client import KinesisClient
 from src.kinesis_data_viewer import KinesisDataViewer
 
 REGION = os.getenv("KDV_REGION") or "ap-northeast-1"
@@ -67,9 +68,7 @@ class TestKinesisDataViewer:
 
         with pytest.raises(SystemExit) as exc_info:
             kdv = KinesisDataViewer(region=self.region, target_stream_name=self.stream_name)
-            monkeypatch.setattr(
-                kdv, "_get_stream_names", return_empty_list.__get__(kdv, KinesisDataViewer)
-            )
+            monkeypatch.setattr(KinesisClient, "get_stream_names", return_empty_list)
             kdv.main(region=self.region)
 
             captured = capsys.readouterr()
