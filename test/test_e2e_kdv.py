@@ -75,23 +75,23 @@ class TestKinesisDataViewer:
         ):
             pass
 
-    def test_summary(self):
-        """正常: summaryコマンド実行"""
-        # ツール実行
-        command = "summary"
+    def _run_command(self, command, extra_options=None) -> str:
+        base_command = [
+            "python",
+            "-m",
+            "kdv",
+            "main",
+            "--region",
+            self.region,
+            "--target_stream_name",
+            self.stream_name,
+            "--command",
+            command,
+        ]
+        if extra_options:
+            base_command.extend(extra_options)
         process = subprocess.Popen(
-            [
-                "python",
-                "-m",
-                "kdv",
-                "main",
-                "--region",
-                self.region,
-                "--target_stream_name",
-                self.stream_name,
-                "--command",
-                command,
-            ],
+            base_command,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -100,6 +100,12 @@ class TestKinesisDataViewer:
 
         # 結果を受け取る
         output, _ = process.communicate()
+        return output
+
+    def test_summary(self):
+        """正常: summaryコマンド実行"""
+        # ツール実行
+        output = self._run_command(command="summary")
 
         assert msg.SUMMARY_TITLE in output
         assert const.SHARD_ID in output
@@ -110,32 +116,8 @@ class TestKinesisDataViewer:
     def test_dump_records_terminal(self):
         """正常: dump_recordsコマンド実行(ターミナル出力)"""
         # ツール実行
-        command = "dump_records"
-        process = subprocess.Popen(
-            [
-                "python",
-                "-m",
-                "kdv",
-                "main",
-                "--region",
-                self.region,
-                "--target_stream_name",
-                self.stream_name,
-                "--command",
-                command,
-                "--target_shard",
-                self.shard_ids[0],
-                "--dump_output",
-                "terminal",
-            ],
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-
-        # 結果を受け取る
-        output, _ = process.communicate()
+        extra_options = ["--target_shard", self.shard_ids[0], "--dump_output", "terminal"]
+        output = self._run_command(command="dump_records", extra_options=extra_options)
 
         assert const.NUMBER in output
         assert const.SEQ_NUM in output
@@ -147,31 +129,8 @@ class TestKinesisDataViewer:
     def test_dump_records_csv(self):
         """正常: dump_recordsコマンド実行(csv出力)"""
         # ツール実行
-        command = "dump_records"
-        process = subprocess.Popen(
-            [
-                "python",
-                "-m",
-                "kdv",
-                "main",
-                "--region",
-                self.region,
-                "--target_stream_name",
-                self.stream_name,
-                "--command",
-                command,
-                "--target_shard",
-                self.shard_ids[0],
-                "--dump_output",
-                "csv",
-            ],
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-        # これがないとエラーになるので注意
-        process.communicate()
+        extra_options = ["--target_shard", self.shard_ids[0], "--dump_output", "csv"]
+        self._run_command(command="dump_records", extra_options=extra_options)
 
         # 出力ファイルが1つであることを確認
         files = [file for file in glob.glob(f"dist/kdv_output_{self.stream_name}_*.csv")]
@@ -180,30 +139,8 @@ class TestKinesisDataViewer:
     def test_show_recent_records(self):
         """正常: show_recent_recordsコマンド実行"""
         # ツール実行
-        command = "show_recent_records"
-        process = subprocess.Popen(
-            [
-                "python",
-                "-m",
-                "kdv",
-                "main",
-                "--region",
-                self.region,
-                "--target_stream_name",
-                self.stream_name,
-                "--command",
-                command,
-                "--target_shard",
-                self.shard_ids[0],
-            ],
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-
-        # 結果を受け取る
-        output, _ = process.communicate()
+        extra_options = ["--target_shard", self.shard_ids[0]]
+        output = self._run_command(command="show_recent_records", extra_options=extra_options)
 
         assert const.NUMBER in output
         assert const.SEQ_NUM in output
@@ -216,29 +153,7 @@ class TestKinesisDataViewer:
     def test_search_record(self):
         """正常: search_keyコマンド実行"""
         # ツール実行
-        command = "search_record"
-        process = subprocess.Popen(
-            [
-                "python",
-                "-m",
-                "kdv",
-                "main",
-                "--region",
-                self.region,
-                "--target_stream_name",
-                self.stream_name,
-                "--command",
-                command,
-                "--search_key",
-                "hello world",
-            ],
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-
-        # 結果を受け取る
-        output, _ = process.communicate()
+        extra_options = ["--search_key", "hello world"]
+        output = self._run_command(command="search_record", extra_options=extra_options)
 
         assert f"{NUM_OF_TEST_RECORDS} record found" in output
