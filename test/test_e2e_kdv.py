@@ -25,6 +25,7 @@ class TestKinesisDataViewer:
     shard_ids: list[str] | None = None
 
     @classmethod
+    @util.error_handling
     def setup_class(cls) -> None:
         """テスト準備、実際にKDS DataStreamを構築する"""
         cls.stream_name = STREAM_NAME
@@ -63,6 +64,7 @@ class TestKinesisDataViewer:
         )
 
     @classmethod
+    @util.error_handling
     def teardown_class(cls):
         """テストの後片付け"""
         # distディレクトリ内のCSVファイルを削除

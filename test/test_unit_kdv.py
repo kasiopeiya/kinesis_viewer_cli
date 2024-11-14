@@ -20,16 +20,19 @@ os.environ["COLUMNS"] = "500"
 
 
 class TestKinesisDataViewer:
+    @util.error_handling
     def setup_method(self) -> None:
         self.stream_name = STREAM_NAME
         self.region = REGION
         self.client = boto3.client("kinesis", region_name=self.region)
 
+    @util.error_handling
     def teardown_method(self):
         # distディレクトリ内のCSVファイルを削除
         for file in glob.glob(f"dist/kdv_output_{self.stream_name}_*.csv"):
             os.remove(file)
 
+    @util.error_handling
     def setup_kinesis(self) -> None:
         """Kinesis Data StreamsのDataStreamのMockリソースを作成する"""
         # ストリームを作成
@@ -44,6 +47,7 @@ class TestKinesisDataViewer:
         shard_list = self.client.list_shards(StreamARN=self.stream_arn)["Shards"]
         self.shard_ids = [d[const.SHARD_ID] for d in shard_list]
 
+    @util.error_handling
     def setup_sample_records(self) -> None:
         """サンプルレコードを用意する"""
         # レコードを追加
