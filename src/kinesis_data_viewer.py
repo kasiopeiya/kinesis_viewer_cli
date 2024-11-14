@@ -12,7 +12,7 @@ import src.msg as msg
 from src.kinesis_client import KinesisClient
 
 
-class KinesisDataViewer:
+class KinesisDataViewerCLI:
     def __init__(self, region: str = "", target_stream_name: str = "") -> None:
         self.region = region
         self.target_stream_name = target_stream_name

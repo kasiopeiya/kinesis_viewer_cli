@@ -9,7 +9,7 @@ from moto import mock_aws
 import src.const as const
 import src.msg as msg
 from src.kinesis_client import KinesisClient
-from src.kinesis_data_viewer import KinesisDataViewer
+from src.kinesis_data_viewer import KinesisDataViewerCLI
 
 REGION = os.getenv("KDV_REGION") or "ap-northeast-1"
 STREAM_NAME = os.getenv("STREAM_NAME") or "kdv-unit-test-stream"
@@ -67,7 +67,7 @@ class TestKinesisDataViewer:
             return []
 
         with pytest.raises(SystemExit) as exc_info:
-            kdv = KinesisDataViewer(region=self.region, target_stream_name=self.stream_name)
+            kdv = KinesisDataViewerCLI(region=self.region, target_stream_name=self.stream_name)
             monkeypatch.setattr(KinesisClient, "get_stream_names", return_empty_list)
             kdv.main(region=self.region)
 
@@ -83,8 +83,8 @@ class TestKinesisDataViewer:
             """exitコマンドを返却するスタブ"""
             return "exit"
 
-        kdv = KinesisDataViewer(region=self.region, target_stream_name=self.stream_name)
-        monkeypatch.setattr(kdv, "_select_command", return_exit.__get__(kdv, KinesisDataViewer))
+        kdv = KinesisDataViewerCLI(region=self.region, target_stream_name=self.stream_name)
+        monkeypatch.setattr(kdv, "_select_command", return_exit.__get__(kdv, KinesisDataViewerCLI))
         kdv.main()
 
         captured = capsys.readouterr()
@@ -98,9 +98,9 @@ class TestKinesisDataViewer:
             """誤ったコマンド名を返却するスタブ"""
             return msg.INVALID_COMMAND
 
-        kdv = KinesisDataViewer(region=self.region, target_stream_name=self.stream_name)
+        kdv = KinesisDataViewerCLI(region=self.region, target_stream_name=self.stream_name)
         monkeypatch.setattr(
-            kdv, "_select_command", return_invalid_command.__get__(kdv, KinesisDataViewer)
+            kdv, "_select_command", return_invalid_command.__get__(kdv, KinesisDataViewerCLI)
         )
 
         with pytest.raises(ValueError):
@@ -111,7 +111,7 @@ class TestKinesisDataViewer:
         self.setup_kinesis()
         self.setup_sample_records()
 
-        kdv = KinesisDataViewer(region=self.region, target_stream_name=self.stream_name)
+        kdv = KinesisDataViewerCLI(region=self.region, target_stream_name=self.stream_name)
         kdv.summary()
 
         # ターミナルへの出力内容の確認
@@ -127,7 +127,7 @@ class TestKinesisDataViewer:
     def test_summary_no_records(self, capsys):
         self.setup_kinesis()
 
-        kdv = KinesisDataViewer(region=self.region, target_stream_name=self.stream_name)
+        kdv = KinesisDataViewerCLI(region=self.region, target_stream_name=self.stream_name)
         kdv.summary()
 
         # ターミナルへの出力内容の確認
@@ -143,7 +143,7 @@ class TestKinesisDataViewer:
         self.setup_kinesis()
         self.setup_sample_records()
 
-        kdv = KinesisDataViewer(region=self.region, target_stream_name=self.stream_name)
+        kdv = KinesisDataViewerCLI(region=self.region, target_stream_name=self.stream_name)
         kdv._dump_records(target_shard=self.shard_ids[0], output="terminal")
 
         # ターミナルへの出力内容の確認
@@ -160,7 +160,7 @@ class TestKinesisDataViewer:
     def test_dump_records_terminal_no_records(self, capsys):
         self.setup_kinesis()
 
-        kdv = KinesisDataViewer(region=self.region, target_stream_name=self.stream_name)
+        kdv = KinesisDataViewerCLI(region=self.region, target_stream_name=self.stream_name)
         kdv._dump_records(target_shard=self.shard_ids[0], output="terminal")
 
         # ターミナルへの出力内容の確認
@@ -176,7 +176,7 @@ class TestKinesisDataViewer:
         self.setup_kinesis()
         self.setup_sample_records()
 
-        kdv = KinesisDataViewer(region=self.region, target_stream_name=self.stream_name)
+        kdv = KinesisDataViewerCLI(region=self.region, target_stream_name=self.stream_name)
         kdv._dump_records(target_shard=self.shard_ids[0], output="csv")
 
         # 出力ファイルが1つであることを確認
@@ -188,7 +188,7 @@ class TestKinesisDataViewer:
         self.setup_kinesis()
         self.setup_sample_records()
 
-        kdv = KinesisDataViewer(region=self.region, target_stream_name=self.stream_name)
+        kdv = KinesisDataViewerCLI(region=self.region, target_stream_name=self.stream_name)
         kdv._show_recent_records(target_shard=self.shard_ids[0])
 
         # ターミナルへの出力内容の確認
@@ -206,7 +206,7 @@ class TestKinesisDataViewer:
     def test_show_recent_records_no_records(self, capsys):
         self.setup_kinesis()
 
-        kdv = KinesisDataViewer(region=self.region, target_stream_name=self.stream_name)
+        kdv = KinesisDataViewerCLI(region=self.region, target_stream_name=self.stream_name)
         kdv._show_recent_records(target_shard=self.shard_ids[0])
 
         # ターミナルへの出力内容の確認
@@ -223,7 +223,7 @@ class TestKinesisDataViewer:
         self.setup_kinesis()
         self.setup_sample_records()
 
-        kdv = KinesisDataViewer(region=self.region, target_stream_name=self.stream_name)
+        kdv = KinesisDataViewerCLI(region=self.region, target_stream_name=self.stream_name)
         kdv._search_record(key="hello world")
 
         # ターミナルへの出力内容の確認
@@ -235,7 +235,7 @@ class TestKinesisDataViewer:
         self.setup_kinesis()
         self.setup_sample_records()
 
-        kdv = KinesisDataViewer(region=self.region, target_stream_name=self.stream_name)
+        kdv = KinesisDataViewerCLI(region=self.region, target_stream_name=self.stream_name)
         kdv._search_record(key="")
 
         # ターミナルへの出力内容の確認
@@ -247,7 +247,7 @@ class TestKinesisDataViewer:
         self.setup_kinesis()
         self.setup_sample_records()
 
-        kdv = KinesisDataViewer(region=self.region, target_stream_name=self.stream_name)
+        kdv = KinesisDataViewerCLI(region=self.region, target_stream_name=self.stream_name)
         kdv._search_record(key=1)
 
         # ターミナルへの出力内容の確認
@@ -259,7 +259,7 @@ class TestKinesisDataViewer:
         self.setup_kinesis()
         self.setup_sample_records()
 
-        kdv = KinesisDataViewer(region=self.region, target_stream_name=self.stream_name)
+        kdv = KinesisDataViewerCLI(region=self.region, target_stream_name=self.stream_name)
         kdv._search_record(key="hoge")
 
         # ターミナルへの出力内容の確認
