@@ -32,12 +32,13 @@ jobs:
       matrix:
         python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
     steps:
+      # Bashトレーシングオプション
+      - run: set -x
+
       - run: cat $GITHUB_EVENT_PATH
       - run: lsb_release -d
       - run: gh --version
 
-      # Bashトレーシングオプション
-      - run: set -x
 
       - uses: actions/checkout@v4
 
