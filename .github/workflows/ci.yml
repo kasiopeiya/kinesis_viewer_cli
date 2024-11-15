@@ -11,6 +11,16 @@ on:
   push:
     branches:
       - main
+# 全パーミッションの無効化
+permissions: {}
+# デフォルトシェルでパイプエラーを有効化
+defaults:
+  run:
+    shell: bash
+# ワークフローが複数起動したら自動キャンセル
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   ci:
     runs-on: ubuntu-latest
@@ -25,6 +35,9 @@ jobs:
       - run: cat $GITHUB_EVENT_PATH
       - run: lsb_release -d
       - run: gh --version
+
+      # Bashトレーシングオプション
+      - run: set -x
 
       - uses: actions/checkout@v4
 
