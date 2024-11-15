@@ -30,14 +30,17 @@ jobs:
       contents: read
     strategy:
       matrix:
+        # 複数のPythonバージョンで動作確認
         python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
     steps:
       # Bashトレーシングオプション
       - run: set -x
 
+      # 前提情報の出力
       - run: cat $GITHUB_EVENT_PATH
       - run: lsb_release -d
       - run: gh --version
+      - run: aws --version
 
 
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
