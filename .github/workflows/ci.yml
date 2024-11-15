@@ -42,19 +42,19 @@ jobs:
 
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
-      - uses: aws-actions/configure-aws-credentials@v4
+      - uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502
         with:
           role-to-assume: ${{ secrets.ROLE_TO_ASSUME }}
           aws-region: ap-northeast-1
       - run: aws sts get-caller-identity
 
       - name: setup python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b
         with:
           python-version: ${{ matrix.python-version }}
 
       - name: install poetry
-        uses: abatilo/actions-poetry@v2
+        uses: abatilo/actions-poetry@e78f54a89cb052fff327414dd9ff010b5d2b4dbd
         with:
           poetry-version: 1.8.4
 
