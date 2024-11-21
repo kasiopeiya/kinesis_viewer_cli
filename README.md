@@ -46,10 +46,8 @@ Kinesis Data Streams(KDS)のDataStreamに格納されたレコード情報を可
 ```bash
 # 仮想環境の構築とパッケージインストール
 poetry install
-# 仮想環境に入る
-poetry shell
-# ツール実行
-python -m kdv
+# 仮想環境でツール実行
+poetry run python -m kdv
 ```
 ### コマンドラインオプション
 
