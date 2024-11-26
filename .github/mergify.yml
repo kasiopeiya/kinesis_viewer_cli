@@ -1,13 +1,6 @@
-pull_request_rules:
-  - name: automatic merge of Dependabot PRs
-    actions:
-      queue:
-        name: default
-        method: squash
-        commit_message_template: |-
-          {{ title }} (#{{ number }})
-          {{ body }}
-    conditions:
+queue_rules:
+  - name: default
+    queue_conditions:
       - -title~=(WIP|wip)
       - -label~=(blocked|do-not-merge)
       - -merged
@@ -18,3 +11,14 @@ pull_request_rules:
       - status-success=ci (3.11)
       - status-success=ci (3.12)
       - status-success=ci (3.13)
+    merge_conditions: []
+    commit_message_template: |-
+      {{ title }} (#{{ number }})
+      {{ body }}
+    merge_method: squash
+
+pull_request_rules:
+  - name: automatic merge of Dependabot PRs
+    conditions: []
+    actions:
+      queue:
