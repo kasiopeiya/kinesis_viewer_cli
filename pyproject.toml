@@ -11,7 +11,7 @@ typing-extensions = "^4.12.2"
 boto3 = "^1.35.41"
 boto3-stubs = "^1.35.41"
 jsonargparse = "^4.33.2"
-questionary = "^2.0.1"
+questionary = "^2.1.0"
 rich = "^13.9.2"
 
 [tool.poetry.group.dev.dependencies]
