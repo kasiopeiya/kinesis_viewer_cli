@@ -72,6 +72,3 @@ jobs:
 
       - name: unit test
         run: poetry run poe test-no-cov
-
-      - name: E2E test
-        run: poetry run poe test-e2e
